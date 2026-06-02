@@ -1,7 +1,7 @@
 [project]
 name = "toolbox-backend"
 version = "0.1.0"
-description = "Add your description here"
+description = "API da plataforma de centralização de ferramentas utilizadas na Newnet"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

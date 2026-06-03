@@ -9,6 +9,7 @@ class Perm(db.Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     nome = Column(String, nullable=False, unique=True)
+    codigo = Column(String, nullable=False, unique=True)
 
     criado_em = Column(
         TIMESTAMP(timezone=True),

@@ -18,6 +18,16 @@ down_revision: Union[str, Sequence[str], None] = "23fedb328fb0"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
+CREATE_USERS_PERM_NAME = PermNames.CREATE_USERS
+READ_USERS_PERM_NAME = PermNames.READ_USERS
+UPDATE_USERS_PERM_NAME = PermNames.UPDATE_USERS
+DEL_USERS_PERM_NAME = PermNames.DEL_USERS
+
+CREATE_USERS_PERM_CODE = PermCodes.CREATE_USERS
+READ_USERS_PERM_CODE = PermCodes.READ_USERS
+UPDATE_USERS_PERM_CODE = PermCodes.UPDATE_USERS
+DEL_USERS_PERM_CODE = PermCodes.DEL_USERS
+
 
 def upgrade() -> None:
     op.execute(
@@ -31,8 +41,8 @@ def upgrade() -> None:
                 NOT EXISTS (SELECT 1 FROM permissoes WHERE nome = :create_users_perm_name)
                 AND NOT EXISTS (SELECT 1 FROM permissoes WHERE codigo = :create_users_perm_code);
         """).bindparams(
-            create_users_perm_name=PermNames.CREATE_USERS,
-            create_users_perm_code=PermCodes.CREATE_USERS,
+            create_users_perm_name=CREATE_USERS_PERM_NAME,
+            create_users_perm_code=CREATE_USERS_PERM_CODE,
         )
     )
     op.execute(
@@ -46,8 +56,8 @@ def upgrade() -> None:
                 NOT EXISTS (SELECT 1 FROM permissoes WHERE nome = :read_users_perm_name)
                 AND NOT EXISTS (SELECT 1 FROM permissoes WHERE codigo = :read_users_perm_code);
         """).bindparams(
-            read_users_perm_name=PermNames.READ_USERS,
-            read_users_perm_code=PermCodes.READ_USERS,
+            read_users_perm_name=READ_USERS_PERM_NAME,
+            read_users_perm_code=READ_USERS_PERM_CODE,
         )
     )
     op.execute(
@@ -61,8 +71,8 @@ def upgrade() -> None:
                 NOT EXISTS (SELECT 1 FROM permissoes WHERE nome = :update_users_perm_name)
                 AND NOT EXISTS (SELECT 1 FROM permissoes WHERE codigo = :update_users_perm_code);
         """).bindparams(
-            update_users_perm_name=PermNames.UPDATE_USERS,
-            update_users_perm_code=PermCodes.UPDATE_USERS,
+            update_users_perm_name=UPDATE_USERS_PERM_NAME,
+            update_users_perm_code=UPDATE_USERS_PERM_CODE,
         )
     )
     op.execute(
@@ -76,8 +86,8 @@ def upgrade() -> None:
                 NOT EXISTS (SELECT 1 FROM permissoes WHERE nome = :del_users_perm_name)
                 AND NOT EXISTS (SELECT 1 FROM permissoes WHERE codigo = :del_users_perm_code);
         """).bindparams(
-            del_users_perm_name=PermNames.DEL_USERS,
-            del_users_perm_code=PermCodes.DEL_USERS,
+            del_users_perm_name=DEL_USERS_PERM_NAME,
+            del_users_perm_code=DEL_USERS_PERM_CODE,
         )
     )
 
@@ -96,10 +106,10 @@ def downgrade() -> None:
                 )
             );
         """).bindparams(
-            create_users_perm_code=PermCodes.CREATE_USERS,
-            read_users_perm_code=PermCodes.READ_USERS,
-            update_users_perm_code=PermCodes.UPDATE_USERS,
-            del_users_perm_code=PermCodes.DEL_USERS,
+            create_users_perm_code=CREATE_USERS_PERM_CODE,
+            read_users_perm_code=READ_USERS_PERM_CODE,
+            update_users_perm_code=UPDATE_USERS_PERM_CODE,
+            del_users_perm_code=DEL_USERS_PERM_CODE,
         )
     )
     op.execute(
@@ -112,9 +122,9 @@ def downgrade() -> None:
                 :del_users_perm_code
             );
         """).bindparams(
-            create_users_perm_code=PermCodes.CREATE_USERS,
-            read_users_perm_code=PermCodes.READ_USERS,
-            update_users_perm_code=PermCodes.UPDATE_USERS,
-            del_users_perm_code=PermCodes.DEL_USERS,
+            create_users_perm_code=CREATE_USERS_PERM_CODE,
+            read_users_perm_code=READ_USERS_PERM_CODE,
+            update_users_perm_code=UPDATE_USERS_PERM_CODE,
+            del_users_perm_code=DEL_USERS_PERM_CODE,
         )
     )

@@ -37,9 +37,9 @@ def upgrade() -> None:
                 timezone('America/Bahia', now()),
                 timezone('America/Bahia', now()),
                 (SELECT id FROM grupos WHERE nome = :group_name)
-            WHERE NOT EXISTS (
-                SELECT 1 FROM usuarios WHERE nome = :nome)
-                AND NOT EXISTS (SELECT 1 FROM usuarios WHERE email = :email)
+            WHERE
+                NOT EXISTS (SELECT 1 FROM usuarios WHERE nome = :nome)
+                AND NOT EXISTS (SELECT 1 FROM usuarios WHERE email = :email);
         """).bindparams(
             nome=DEFAULT_USER_NAME,
             email=DEFAULT_USER_EMAIL,

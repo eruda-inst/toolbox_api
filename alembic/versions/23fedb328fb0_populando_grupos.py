@@ -30,7 +30,6 @@ def upgrade() -> None:
                 WHERE nome = '{GroupNames.ADMIN}'
             );
         """)
-
     op.execute(f"""
             INSERT INTO grupos (nome, criado_em)
             SELECT
@@ -47,18 +46,9 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.execute(f"""
         DELETE FROM grupos_permissoes
-        WHERE id_grupo = (SELECT id FROM grupos WHERE nome = '{GroupNames.ADMIN}');
+        WHERE id_grupo IN (SELECT id FROM grupos WHERE nome IN ('{GroupNames.ADMIN}', '{GroupNames.USER}'));
     """)
     op.execute(f"""
         DELETE FROM grupos
-        WHERE nome = '{GroupNames.ADMIN}';
-    """)
-
-    op.execute(f"""
-        DELETE FROM grupos_permissoes
-        WHERE id_grupo = (SELECT id FROM grupos WHERE nome = '{GroupNames.USER}');
-    """)
-    op.execute(f"""
-        DELETE FROM grupos
-        WHERE nome = '{GroupNames.USER}';
+        WHERE nome IN ('{GroupNames.ADMIN}', '{GroupNames.USER}');
     """)

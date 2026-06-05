@@ -7,6 +7,7 @@ Create Date: 2026-06-05 10:04:55.889121
 """
 
 from alembic import op
+import sqlalchemy as sa
 from typing import Sequence, Union
 from app.api.v1.utils.enums.perm_names_enum import PermNames
 from app.api.v1.utils.enums.perm_codes_enum import PermCodes
@@ -19,65 +20,101 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute(f"""
-        INSERT INTO permissoes (nome, codigo, criado_em)
-        SELECT
-            '{PermNames.CREATE_USERS}',
-            '{PermCodes.CREATE_USERS}',
-            timezone('America/Bahia', now())
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM permissoes
-            WHERE codigo = '{PermCodes.CREATE_USERS}' AND nome = '{PermNames.CREATE_USERS}'
-        );
-        """)
-    op.execute(f"""
-        INSERT INTO permissoes (nome, codigo, criado_em)
-        SELECT
-            '{PermNames.READ_USERS}',
-            '{PermCodes.READ_USERS}',
-            timezone('America/Bahia', now())
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM permissoes
-            WHERE codigo = '{PermCodes.READ_USERS}' AND nome = '{PermNames.READ_USERS}'
-        );
-        """)
-    op.execute(f"""
-        INSERT INTO permissoes (nome, codigo, criado_em)
-        SELECT
-            '{PermNames.UPDATE_USERS}',
-            '{PermCodes.UPDATE_USERS}',
-            timezone('America/Bahia', now())
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM permissoes
-            WHERE codigo = '{PermCodes.UPDATE_USERS}' AND nome = '{PermNames.UPDATE_USERS}'
-        );
-        """)
-    op.execute(f"""
-        INSERT INTO permissoes (nome, codigo, criado_em)
-        SELECT
-            '{PermNames.DEL_USERS}',
-            '{PermCodes.DEL_USERS}',
-            timezone('America/Bahia', now())
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM permissoes
-            WHERE codigo = '{PermCodes.DEL_USERS}' AND nome = '{PermNames.DEL_USERS}'
-        );
-        """)
+    op.execute(
+        sa.text("""
+            INSERT INTO permissoes (nome, codigo, criado_em)
+            SELECT
+                :create_users_perm_name,
+                :create_users_perm_code,
+                timezone('America/Bahia', now())
+            WHERE
+                NOT EXISTS (SELECT 1 FROM permissoes WHERE nome = :create_users_perm_name)
+                AND NOT EXISTS (SELECT 1 FROM permissoes WHERE codigo = :create_users_perm_code);
+        """).bindparams(
+            create_users_perm_name=PermNames.CREATE_USERS,
+            create_users_perm_code=PermCodes.CREATE_USERS,
+        )
+    )
+    op.execute(
+        sa.text("""
+            INSERT INTO permissoes (nome, codigo, criado_em)
+            SELECT
+                :read_users_perm_name,
+                :read_users_perm_code,
+                timezone('America/Bahia', now())
+            WHERE
+                NOT EXISTS (SELECT 1 FROM permissoes WHERE nome = :read_users_perm_name)
+                AND NOT EXISTS (SELECT 1 FROM permissoes WHERE codigo = :read_users_perm_code);
+        """).bindparams(
+            read_users_perm_name=PermNames.READ_USERS,
+            read_users_perm_code=PermCodes.READ_USERS,
+        )
+    )
+    op.execute(
+        sa.text("""
+            INSERT INTO permissoes (nome, codigo, criado_em)
+            SELECT
+                :update_users_perm_name,
+                :update_users_perm_code,
+                timezone('America/Bahia', now())
+            WHERE
+                NOT EXISTS (SELECT 1 FROM permissoes WHERE nome = :update_users_perm_name)
+                AND NOT EXISTS (SELECT 1 FROM permissoes WHERE codigo = :update_users_perm_code);
+        """).bindparams(
+            update_users_perm_name=PermNames.UPDATE_USERS,
+            update_users_perm_code=PermCodes.UPDATE_USERS,
+        )
+    )
+    op.execute(
+        sa.text("""
+            INSERT INTO permissoes (nome, codigo, criado_em)
+            SELECT
+                :del_users_perm_name,
+                :del_users_perm_code,
+                timezone('America/Bahia', now())
+            WHERE
+                NOT EXISTS (SELECT 1 FROM permissoes WHERE nome = :del_users_perm_name)
+                AND NOT EXISTS (SELECT 1 FROM permissoes WHERE codigo = :del_users_perm_code);
+        """).bindparams(
+            del_users_perm_name=PermNames.DEL_USERS,
+            del_users_perm_code=PermCodes.DEL_USERS,
+        )
+    )
 
 
 def downgrade() -> None:
-    op.execute(f"""
-        DELETE FROM grupos_permissoes
-        WHERE id_permissao IN (
-            SELECT id FROM permissoes
-            WHERE codigo IN ('{PermCodes.CREATE_USERS}', '{PermCodes.READ_USERS}', '{PermCodes.UPDATE_USERS}', '{PermCodes.DEL_USERS}')
-        );
-    """)
-    op.execute(f"""
-        DELETE FROM permissoes
-        WHERE codigo IN ('{PermCodes.CREATE_USERS}', '{PermCodes.READ_USERS}', '{PermCodes.UPDATE_USERS}', '{PermCodes.DEL_USERS}')
-    """)
+    op.execute(
+        sa.text("""
+            DELETE FROM grupos_permissoes
+            WHERE id_permissao IN (
+                SELECT id FROM permissoes
+                WHERE codigo IN (
+                    :create_users_perm_code,
+                    :read_users_perm_code,
+                    :update_users_perm_code,
+                    :del_users_perm_code
+                )
+            );
+        """).bindparams(
+            create_users_perm_code=PermCodes.CREATE_USERS,
+            read_users_perm_code=PermCodes.READ_USERS,
+            update_users_perm_code=PermCodes.UPDATE_USERS,
+            del_users_perm_code=PermCodes.DEL_USERS,
+        )
+    )
+    op.execute(
+        sa.text("""
+            DELETE FROM permissoes
+            WHERE codigo IN (
+                :create_users_perm_code,
+                :read_users_perm_code,
+                :update_users_perm_code,
+                :del_users_perm_code
+            );
+        """).bindparams(
+            create_users_perm_code=PermCodes.CREATE_USERS,
+            read_users_perm_code=PermCodes.READ_USERS,
+            update_users_perm_code=PermCodes.UPDATE_USERS,
+            del_users_perm_code=PermCodes.DEL_USERS,
+        )
+    )

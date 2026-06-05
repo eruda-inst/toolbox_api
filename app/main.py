@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 app = FastAPI(
     title="Toolbox API",
     description="API da plataforma de centralização de ferramentas utilizadas na Newnet",
-    version="Mark I (0.10.6)",
+    version="Mark I (0.11.6)",
 )
 
 

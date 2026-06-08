@@ -1,15 +1,16 @@
+from typing import Annotated
 from fastapi.logger import logger
 from .. import db, services, models, utils
 from sqlalchemy.ext.asyncio import AsyncSession
 from .authentication_dep import get_current_user
 from fastapi import HTTPException, status, Depends
 
+db_dep = Annotated[AsyncSession, Depends(db.get_db)]
+current_user_dep = Annotated[models.User, Depends(get_current_user)]
+
 
 def has_perm(required_perm: utils.PermCodes):
-    async def dep(
-        db: AsyncSession = Depends(db.get_db),
-        current_user: models.User = Depends(get_current_user),
-    ) -> models.User:
+    async def dep(db: db_dep, current_user: current_user_dep) -> models.User:
         try:
             perms = await services.PermService.get_by_user_id(
                 db=db, user_id=current_user.id  # type: ignore

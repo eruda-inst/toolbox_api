@@ -1,11 +1,12 @@
-from .api.v1 import schemas
 from pydantic import HttpUrl
 from fastapi import FastAPI, Request
+from .api.v1 import schemas, api_v1_router
 
 app = FastAPI(
     title="Toolbox API",
     description="API da plataforma de centralização de ferramentas utilizadas na Newnet",
-    version="Mark I (0.17.3)",
+    version="Mark I (0.18.4)",
+    routes=api_v1_router.routes,
 )
 
 

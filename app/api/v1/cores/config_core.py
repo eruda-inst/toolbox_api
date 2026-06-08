@@ -1,5 +1,5 @@
-from pydantic import field_validator, SecretStr, EmailStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator, SecretStr, EmailStr, NonNegativeInt
 
 
 class Settings(BaseSettings):
@@ -16,7 +16,14 @@ class Settings(BaseSettings):
     postgres_password: SecretStr = SecretStr("")
     postgres_db: str = ""
 
+    token_expire_minutes: NonNegativeInt = 0
+    refresh_token_expire_days: NonNegativeInt = 0
+
     secret_key: SecretStr = SecretStr("")
+
+    @property
+    def token_expire_seconds(self) -> NonNegativeInt:
+        return self.token_expire_minutes * 60
 
     @field_validator("database_url")
     def change_db_schema(cls, v: str) -> str:

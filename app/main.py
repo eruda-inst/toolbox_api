@@ -5,7 +5,7 @@ from .api.v1 import schemas, api_v1_router
 app = FastAPI(
     title="Toolbox API",
     description="API da plataforma de centralização de ferramentas utilizadas na Newnet",
-    version="Mark I (0.18.6)",
+    version="Mark I (0.19.6)",
     routes=api_v1_router.routes,
 )
 

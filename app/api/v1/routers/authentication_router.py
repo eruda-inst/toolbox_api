@@ -20,3 +20,16 @@ async def login(
     Autenticação de usuário para acessar o sistema
     """
     return await services.AuthenticationService.login(creds=credenciais, db=db)
+
+
+@authentication_router.post(path="/refresh-token", summary="Renova token de acesso")
+async def refresh_token(
+    db: db_dep,
+    refresh_token: Annotated[str, Body(embed=True, description="Token de atualização")],
+) -> schemas.AccessTokenOut:
+    """
+    Renova token de acesso do usuário
+    """
+    return await services.AuthenticationService.refresh_token(
+        refresh_token=refresh_token, db=db
+    )

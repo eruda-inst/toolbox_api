@@ -41,6 +41,7 @@ class AuthenticationService:
             msg = "Token inválido"
             logger.warning(f"{msg}: {e}")
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=msg)
+
         try:
             user = await cruds.UserCrud.get_by_email(db=db, email=email)
         except SQLAlchemyError as e:
@@ -49,14 +50,17 @@ class AuthenticationService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
             )
+
         if user is None:
             msg = "Usuário do token, não encontrado"
             logger.warning(f"{msg}")
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=msg)
+
         if not bool(user.ativo):
             msg = "Usuário inativo tentou acesso"
             logger.warning(msg)
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=msg)
+
         return user
 
     @staticmethod
@@ -139,3 +143,62 @@ class AuthenticationService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
             )
+
+    @classmethod
+    async def refresh_token(
+        cls, refresh_token: str, db: AsyncSession
+    ) -> schemas.AccessTokenOut:
+        try:
+            payload = jwt.decode(
+                token=refresh_token, key=SECRET_KEY, algorithms=[ALGORITHM]
+            )
+            email = payload.get("sub")
+            if not email:
+                msg = "Refresh token inválido: Email ausente"
+                logger.warning(msg)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail=msg
+                )
+        except ExpiredSignatureError:
+            msg = "Refresh token expirado"
+            logger.warning(msg)
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=msg)
+        except JWTError as e:
+            msg = "Erro ao decodificar refresh token"
+            logger.error(f"{msg}: {e}")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=msg)
+
+        try:
+            user_db = await cruds.UserCrud.get_by_email(db=db, email=email)
+            if not user_db:
+                msg = "Usuário não encontrado"
+                logger.warning(msg)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail=msg
+                )
+            if not bool(user_db.ativo):
+                msg = "Usuário inativo tentou renovar token"
+                logger.warning(msg)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail=msg
+                )
+        except SQLAlchemyError as e:
+            msg = "Erro no banco de dados ao renovar token"
+            logger.error(f"{msg}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
+            )
+
+        data = {"sub": email}
+        new_access_token = cls._create_token(
+            data=data, expires_delta=timedelta(minutes=TOKEN_EXPIRE_MINUTES)
+        )
+        new_refresh_token = cls._create_token(
+            data=data, expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+        )
+
+        return schemas.AccessTokenOut(
+            access_token=new_access_token,
+            refresh_token=new_refresh_token,
+            expires_in=TOKEN_EXPIRE_SECONDS,
+        )

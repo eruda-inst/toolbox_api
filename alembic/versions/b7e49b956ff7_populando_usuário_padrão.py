@@ -9,6 +9,7 @@ Create Date: 2026-06-05 10:35:17.377030
 from alembic import op
 import sqlalchemy as sa
 from typing import Sequence, Union
+from passlib.context import CryptContext
 from app.api.v1.cores.config_core import settings
 from app.api.v1.utils.enums.group_names_enum import GroupNames
 
@@ -18,9 +19,12 @@ down_revision: Union[str, Sequence[str], None] = "ba191e30aa82"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 DEFAULT_USER_NAME = settings.default_user_full_name
 DEFAULT_USER_EMAIL = settings.default_user_email
 DEFAULT_USER_PASSWORD = settings.default_user_password.get_secret_value()
+DEFAULT_USER_HASHED_PASSWORD = pwd_context.hash(DEFAULT_USER_PASSWORD)
 DEFAULT_USER_ACTIVE = True
 DEFAULT_USER_GROUP_NAME = GroupNames.ADMIN
 
@@ -43,7 +47,7 @@ def upgrade() -> None:
         """).bindparams(
             nome=DEFAULT_USER_NAME,
             email=DEFAULT_USER_EMAIL,
-            senha=DEFAULT_USER_PASSWORD,
+            senha=DEFAULT_USER_HASHED_PASSWORD,
             ativo=DEFAULT_USER_ACTIVE,
             group_name=DEFAULT_USER_GROUP_NAME,
         )

@@ -17,8 +17,8 @@ down_revision: Union[str, Sequence[str], None] = "29d056207da7"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-ADMIN_GROUP_NAME = GroupNames.ADMIN
-USER_GROUP_NAME = GroupNames.USER
+ADMIN_GROUP_NAME = GroupNames.ADMIN.value
+USER_GROUP_NAME = GroupNames.USER.value
 
 
 def upgrade() -> None:

@@ -18,15 +18,15 @@ down_revision: Union[str, Sequence[str], None] = "23fedb328fb0"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-CREATE_USERS_PERM_NAME = PermNames.CREATE_USERS
-READ_USERS_PERM_NAME = PermNames.READ_USERS
-UPDATE_USERS_PERM_NAME = PermNames.UPDATE_USERS
-DEL_USERS_PERM_NAME = PermNames.DEL_USERS
+CREATE_USERS_PERM_NAME = PermNames.CREATE_USERS.value
+READ_USERS_PERM_NAME = PermNames.READ_USERS.value
+UPDATE_USERS_PERM_NAME = PermNames.UPDATE_USERS.value
+DEL_USERS_PERM_NAME = PermNames.DEL_USERS.value
 
-CREATE_USERS_PERM_CODE = PermCodes.CREATE_USERS
-READ_USERS_PERM_CODE = PermCodes.READ_USERS
-UPDATE_USERS_PERM_CODE = PermCodes.UPDATE_USERS
-DEL_USERS_PERM_CODE = PermCodes.DEL_USERS
+CREATE_USERS_PERM_CODE = PermCodes.CREATE_USERS.value
+READ_USERS_PERM_CODE = PermCodes.READ_USERS.value
+UPDATE_USERS_PERM_CODE = PermCodes.UPDATE_USERS.value
+DEL_USERS_PERM_CODE = PermCodes.DEL_USERS.value
 
 
 def upgrade() -> None:

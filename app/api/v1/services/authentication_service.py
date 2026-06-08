@@ -36,7 +36,6 @@ class AuthenticationService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token inválido",
             )
-
         try:
             user = await cruds.UserCrud.get_by_email(db=db, email=email)
         except SQLAlchemyError as e:
@@ -45,19 +44,16 @@ class AuthenticationService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Erro interno ao validar usuário",
             )
-
         if user is None:
             logger.warning(f"Usuário do token não encontrado: {email}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Credenciais inválidas",
             )
-
         if not bool(user.ativo):
             logger.warning(f"Usuário inativo tentou acesso: {email}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Usuário inativo. Contate o administrador.",
             )
-
         return user

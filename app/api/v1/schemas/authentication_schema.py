@@ -21,3 +21,7 @@ class AccessTokenOut(BaseModel):
 
 class RefreshTokenReq(BaseModel):
     refresh_token: str = Field(description="Token de atualização atual do usuário")
+
+
+class LogoutReq(BaseModel):
+    refresh_token: str = Field(description="Refresh token do usuário a ser invalidado")

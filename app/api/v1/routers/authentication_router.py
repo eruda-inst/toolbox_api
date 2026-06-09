@@ -1,7 +1,7 @@
 from typing import Annotated
-from fastapi import APIRouter, Body, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from .. import schemas, db, services, models, deps
+from fastapi import APIRouter, Body, Depends, status
 
 authentication_router = APIRouter(tags=["Autenticação"], prefix="/autenticacao")
 
@@ -39,8 +39,28 @@ async def refresh_token(
 
 
 @authentication_router.get(path="/mim", summary="Usuário atual")
-async def me(db: db_dep, current_user: current_user_dep) -> schemas.UserOut:
+async def me(current_user: current_user_dep) -> schemas.UserOut:
     """
     Usuário atual logado
     """
     return schemas.UserOut.model_validate(current_user)
+
+
+@authentication_router.post(
+    path="/logout",
+    summary="Invalida refresh token",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def logout(
+    db: db_dep,
+    current_user: current_user_dep,
+    logout_req: Annotated[
+        schemas.LogoutReq, Body(description="Refresh token a ser invalidado")
+    ],
+) -> None:
+    """
+    Invalida o refresh token fornecido, impedindo sua reutilização. Requer autenticação (token de acesso válido) e o token deve pertencer ao usuário logado
+    """
+    await services.AuthenticationService.logout(
+        db=db, refresh_token=logout_req.refresh_token, current_user=current_user
+    )

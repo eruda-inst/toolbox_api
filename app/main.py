@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(
     title="Toolbox API",
     description="API da plataforma de centralização de ferramentas utilizadas na Newnet",
-    version="Mark I (0.23.0)",
+    version="Mark I (0.24.0)",
     routes=api_v1_router.routes,
 )
 

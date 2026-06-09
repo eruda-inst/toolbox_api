@@ -1,7 +1,7 @@
 from .perm_schema import PermOut
 from .index_schema import IndexOut
 from .user_schema import UserOut, LoginCreds
-from .authentication_schema import AccessTokenOut, RefreshTokenReq
+from .authentication_schema import AccessTokenOut, RefreshTokenReq, LogoutReq
 
 __all__ = [
     "PermOut",
@@ -10,4 +10,5 @@ __all__ = [
     "LoginCreds",
     "AccessTokenOut",
     "RefreshTokenReq",
+    "LogoutReq",
 ]

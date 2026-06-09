@@ -17,3 +17,7 @@ class AccessTokenOut(BaseModel):
         description="Tempo de expiração (em segundos)",
         examples=[TOKEN_EXPIRE_SECONDS],
     )
+
+
+class RefreshTokenReq(BaseModel):
+    refresh_token: str = Field(description="Token de atualização atual do usuário")

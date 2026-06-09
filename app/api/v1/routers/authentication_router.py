@@ -25,11 +25,13 @@ async def login(
 @authentication_router.post(path="/refresh-token", summary="Renova token de acesso")
 async def refresh_token(
     db: db_dep,
-    refresh_token: Annotated[str, Body(embed=True, description="Token de atualização")],
+    token_req: Annotated[
+        schemas.RefreshTokenReq, Body(description="O refresh token atual do usuário")
+    ],
 ) -> schemas.AccessTokenOut:
     """
-    Renova token de acesso do usuário
+    Renova token de acesso do usuário através de um Refresh Token válido. O token utilizado será invalidado para requisições futuras (Refresh Token Rotation)
     """
     return await services.AuthenticationService.refresh_token(
-        refresh_token=refresh_token, db=db
+        db=db, token_req=token_req
     )

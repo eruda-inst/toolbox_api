@@ -1,6 +1,8 @@
+import uuid
 from typing import Any
 from zoneinfo import ZoneInfo
 from fastapi.logger import logger
+from sqlalchemy.future import select
 from datetime import datetime, timedelta
 from fastapi import HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
@@ -64,11 +66,15 @@ class AuthenticationService:
         return user
 
     @staticmethod
-    def _create_token(data: dict[str, Any], expires_delta: timedelta) -> str:
+    def _create_token(
+        data: dict[str, Any], expires_delta: timedelta, token_type: str
+    ) -> str:
         try:
             to_encode = data.copy()
             expire = datetime.now(ZoneInfo("America/Bahia")) + expires_delta
-            to_encode.update({"exp": expire})
+            to_encode.update(
+                {"exp": expire, "type": token_type, "jti": str(uuid.uuid4())}
+            )
             encoded_jwt = jwt.encode(
                 claims=to_encode, key=SECRET_KEY, algorithm=ALGORITHM
             )
@@ -118,10 +124,14 @@ class AuthenticationService:
             data = {"sub": email}
 
             access_token = cls._create_token(
-                data=data, expires_delta=timedelta(minutes=TOKEN_EXPIRE_MINUTES)
+                data=data,
+                expires_delta=timedelta(minutes=TOKEN_EXPIRE_MINUTES),
+                token_type="access",
             )
             refresh_token = cls._create_token(
-                data=data, expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+                data=data,
+                expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+                token_type="refresh",
             )
 
             return schemas.AccessTokenOut(
@@ -146,59 +156,93 @@ class AuthenticationService:
 
     @classmethod
     async def refresh_token(
-        cls, refresh_token: str, db: AsyncSession
+        cls, db: AsyncSession, token_req: schemas.RefreshTokenReq
     ) -> schemas.AccessTokenOut:
+        token = token_req.refresh_token
+
         try:
-            payload = jwt.decode(
-                token=refresh_token, key=SECRET_KEY, algorithms=[ALGORITHM]
-            )
-            email = payload.get("sub")
-            if not email:
-                msg = "Refresh token inválido: Email ausente"
+            payload = jwt.decode(token=token, key=SECRET_KEY, algorithms=[ALGORITHM])
+            email: str | None = payload.get("sub")
+            jti: str | None = payload.get("jti")
+            token_type: str | None = payload.get("type")
+            exp_timestamp = payload.get("exp")
+
+            if not exp_timestamp or not isinstance(exp_timestamp, (int, float)):
+                msg = "Refresh token inválido: expiração ausente ou mal formatada"
                 logger.warning(msg)
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED, detail=msg
                 )
+
+            if not email or not jti or token_type != "refresh":
+                msg = "Refresh token inválido"
+                logger.warning(msg)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail=msg
+                )
+
         except ExpiredSignatureError:
             msg = "Refresh token expirado"
             logger.warning(msg)
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=msg)
-        except JWTError as e:
-            msg = "Erro ao decodificar refresh token"
-            logger.error(f"{msg}: {e}")
+        except JWTError:
+            msg = "Refresh token inválido"
+            logger.warning(msg)
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=msg)
 
         try:
-            user_db = await cruds.UserCrud.get_by_email(db=db, email=email)
-            if not user_db:
-                msg = "Usuário não encontrado"
+            stmt = select(models.TokenBlacklist).where(models.TokenBlacklist.jti == jti)
+            result = await db.execute(stmt)
+            blacklisted_token = result.scalar_one_or_none()
+
+            if blacklisted_token:
+                msg = "Tentativa de reuso de refresh token na blacklist"
                 logger.warning(msg)
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED, detail=msg
                 )
-            if not bool(user_db.ativo):
-                msg = "Usuário inativo tentou renovar token"
+
+            user = await cruds.UserCrud.get_by_email(db=db, email=email)
+            if user is None or not bool(user.ativo):
+                msg = "Usuário inválido ou inativo"
                 logger.warning(msg)
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED, detail=msg
                 )
-        except SQLAlchemyError as e:
-            msg = "Erro no banco de dados ao renovar token"
+
+            exp_datetime = datetime.fromtimestamp(
+                exp_timestamp, tz=ZoneInfo("America/Bahia")  # type: ignore
+            )
+            new_blacklist_entry = models.TokenBlacklist(jti=jti, expiracao=exp_datetime)
+            db.add(new_blacklist_entry)
+
+            data = {"sub": email}
+            new_access_token = cls._create_token(
+                data=data,
+                expires_delta=timedelta(minutes=TOKEN_EXPIRE_MINUTES),
+                token_type="access",
+            )
+            new_refresh_token = cls._create_token(
+                data=data,
+                expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+                token_type="refresh",
+            )
+
+            await db.commit()
+
+            return schemas.AccessTokenOut(
+                access_token=new_access_token,
+                refresh_token=new_refresh_token,
+                expires_in=TOKEN_EXPIRE_SECONDS,
+            )
+
+        except HTTPException:
+            await db.rollback()
+            raise
+        except Exception as e:
+            await db.rollback()
+            msg = "Erro inesperado ao atualizar refresh token"
             logger.error(f"{msg}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
             )
-
-        data = {"sub": email}
-        new_access_token = cls._create_token(
-            data=data, expires_delta=timedelta(minutes=TOKEN_EXPIRE_MINUTES)
-        )
-        new_refresh_token = cls._create_token(
-            data=data, expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-        )
-
-        return schemas.AccessTokenOut(
-            access_token=new_access_token,
-            refresh_token=new_refresh_token,
-            expires_in=TOKEN_EXPIRE_SECONDS,
-        )

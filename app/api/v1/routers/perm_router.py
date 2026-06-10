@@ -20,3 +20,15 @@ async def get_by_user_id(
     Retorna permissões associadas a um usuário, através de seu ID
     """
     return await services.PermService.get_by_user_id(db=db, user_id=id)
+
+
+@perm_router.get(path="/grupo/id/{id}", summary="Retorna permissões de um grupo")
+async def get_by_group_id(
+    db: db_dep,
+    current_user: current_user_dep,
+    id: Annotated[PositiveInt, Path(description="ID do grupo")],
+) -> list[schemas.PermOut]:
+    """
+    Retorna permissões associadas a um grupo, através de seu ID
+    """
+    return await services.PermService.get_by_group_id(db=db, group_id=id)

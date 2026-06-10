@@ -1,4 +1,4 @@
 from .user_crud import UserCrud
-from .perm_crud import PermCrud
+from .group_crud import GroupCrud
 
-__all__ = ["UserCrud", "PermCrud"]
+__all__ = ["UserCrud", "GroupCrud"]

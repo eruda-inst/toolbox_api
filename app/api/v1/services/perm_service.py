@@ -25,7 +25,7 @@ class PermService:
         except HTTPException:
             raise
         except SQLAlchemyError as e:
-            msg = f"Erro no banco de dados ao buscar permissões do usuário"
+            msg = "Erro no banco de dados ao buscar permissões do usuário"
             logger.error(f"{msg}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
@@ -55,7 +55,7 @@ class PermService:
         except HTTPException:
             raise
         except SQLAlchemyError as e:
-            msg = f"Erro no banco de dados ao buscar permissões do grupo"
+            msg = "Erro no banco de dados ao buscar permissões do grupo"
             logger.error(f"{msg}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
@@ -85,7 +85,7 @@ class PermService:
         except HTTPException:
             raise
         except SQLAlchemyError as e:
-            msg = f"Erro no banco de dados ao buscar permissões do grupo"
+            msg = "Erro no banco de dados ao buscar permissões do grupo"
             logger.error(f"{msg}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg

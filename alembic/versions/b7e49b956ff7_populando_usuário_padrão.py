@@ -31,7 +31,7 @@ DEFAULT_USER_GROUP_NAME = GroupNames.ADMIN
 
 def upgrade() -> None:
     op.execute(
-        sa.text(f"""
+        sa.text("""
             INSERT INTO usuarios (nome, email, senha, ativo, criado_em, atualizado_em, id_grupo)
             SELECT
                 :nome,
@@ -56,7 +56,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.execute(
-        sa.text(f"""
+        sa.text("""
             DELETE FROM usuarios
             WHERE nome = :nome AND email = :email;
         """).bindparams(

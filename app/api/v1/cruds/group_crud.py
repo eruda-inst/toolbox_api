@@ -19,3 +19,16 @@ class GroupCrud:
             return result.scalar_one_or_none()
         except SQLAlchemyError as e:
             raise e
+
+    @staticmethod
+    async def get_by_name(db: AsyncSession, name: str) -> models.Group | None:
+        try:
+            stmt = (
+                select(models.Group)
+                .where(models.Group.nome == name)
+                .options(selectinload(models.Group.permissoes))
+            )
+            result = await db.execute(stmt)
+            return result.scalar_one_or_none()
+        except SQLAlchemyError as e:
+            raise e

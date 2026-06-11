@@ -1,4 +1,4 @@
-from .db_db import get_db
 from .base_db import Base
+from .db_db import get_db, SessionLocal
 
-__all__ = ["get_db", "Base"]
+__all__ = ["Base", "get_db", "SessionLocal"]

@@ -27,8 +27,9 @@ class AuthenticationService:
             )
 
             email: str | None = payload.get("sub")
+            token_type: str | None = payload.get("type")
 
-            if not email:
+            if not email or token_type != "access":
                 msg = "Token inválido"
                 logger.warning(msg)
                 raise HTTPException(
@@ -210,7 +211,7 @@ class AuthenticationService:
                 )
 
             exp_datetime = datetime.fromtimestamp(
-                exp_timestamp, tz=ZoneInfo("America/Bahia")  # type: ignore
+                exp_timestamp, tz=ZoneInfo("America/Bahia")
             )
             new_blacklist_entry = models.TokenBlacklist(jti=jti, expiracao=exp_datetime)
             db.add(new_blacklist_entry)

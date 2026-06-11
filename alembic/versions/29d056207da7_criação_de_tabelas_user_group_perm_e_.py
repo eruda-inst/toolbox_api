@@ -44,12 +44,19 @@ def upgrade() -> None:
     )
     op.create_table(
         "grupos_permissoes",
-        sa.Column("id_grupo", sa.Integer, sa.ForeignKey("grupos.id"), primary_key=True),
+        sa.Column(
+            "id_grupo",
+            sa.Integer,
+            sa.ForeignKey("grupos.id"),
+            primary_key=True,
+            nullable=False,
+        ),
         sa.Column(
             "id_permissao",
             sa.Integer,
             sa.ForeignKey("permissoes.id"),
             primary_key=True,
+            nullable=False,
         ),
         if_not_exists=True,
     )

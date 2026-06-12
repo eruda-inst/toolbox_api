@@ -28,6 +28,7 @@ class AuthenticationService:
 
             email: str | None = payload.get("sub")
             token_type: str | None = payload.get("type")
+            token_version: int | None = payload.get("ver")
 
             if not email or token_type != "access":
                 msg = "Token inválido"
@@ -35,6 +36,14 @@ class AuthenticationService:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED, detail=msg
                 )
+
+            if token_version is None:
+                msg = "Token sem versão - versão desatualizada"
+                logger.warning(msg)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail=msg
+                )
+
         except ExpiredSignatureError:
             msg = "Token expirado"
             logger.warning(msg)
@@ -46,6 +55,33 @@ class AuthenticationService:
 
         try:
             user = await cruds.UserCrud.get_by_email(db=db, email=email)
+
+            if user is None:
+                msg = "Usuário do token não encontrado"
+                logger.warning(msg)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail=msg
+                )
+
+            if not bool(user.ativo):
+                msg = "Usuário inativo tentou acesso"
+                logger.warning(msg)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail=msg
+                )
+
+            if user.versao_token != token_version:  # type: ignore
+                msg = "Token desatualizado (versão incorreta)"
+                logger.warning(
+                    f"{msg} - user: {user.email}, token_ver: {token_version}, db_ver: {user.versao_token}"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token inválido ou expirado",
+                )
+
+            return user
+
         except SQLAlchemyError as e:
             msg = "Erro no banco de dados durante verificação de token"
             logger.error(f"{msg}: {e}")
@@ -53,38 +89,25 @@ class AuthenticationService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
             )
 
-        if user is None:
-            msg = "Usuário do token, não encontrado"
-            logger.warning(f"{msg}")
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=msg)
-
-        if not bool(user.ativo):
-            msg = "Usuário inativo tentou acesso"
-            logger.warning(msg)
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=msg)
-
-        return user
-
-    @staticmethod
+    @classmethod
     def _create_token(
-        data: dict[str, Any], expires_delta: timedelta, token_type: str
+        cls,
+        data: dict[str, Any],
+        expires_delta: timedelta,
+        token_type: str,
+        user_token_version: int = 1,
     ) -> str:
-        try:
-            to_encode = data.copy()
-            expire = datetime.now(ZoneInfo("America/Bahia")) + expires_delta
-            to_encode.update(
-                {"exp": expire, "type": token_type, "jti": str(uuid.uuid4())}
-            )
-            encoded_jwt = jwt.encode(
-                claims=to_encode, key=SECRET_KEY, algorithm=ALGORITHM
-            )
-            return encoded_jwt
-        except Exception as e:
-            msg = "Erro inesperado durante criação de token"
-            logger.error(f"{msg}: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
-            )
+        to_encode = data.copy()
+        expire = datetime.now(ZoneInfo("America/Bahia")) + expires_delta
+        to_encode.update(
+            {
+                "exp": expire,
+                "type": token_type,
+                "jti": str(uuid.uuid4()),
+                "ver": user_token_version,
+            }
+        )
+        return jwt.encode(claims=to_encode, key=SECRET_KEY, algorithm=ALGORITHM)
 
     @classmethod
     async def login(
@@ -127,11 +150,13 @@ class AuthenticationService:
                 data=data,
                 expires_delta=timedelta(seconds=TOKEN_EXPIRE_SECONDS),
                 token_type="access",
+                user_token_version=user.versao_token,  # type: ignore
             )
             refresh_token = cls._create_token(
                 data=data,
                 expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
                 token_type="refresh",
+                user_token_version=user.versao_token,  # type: ignore
             )
 
             return schemas.AccessTokenOut(
@@ -166,6 +191,7 @@ class AuthenticationService:
             jti: str | None = payload.get("jti")
             token_type: str | None = payload.get("type")
             exp_timestamp = payload.get("exp")
+            token_version: int | None = payload.get("ver")
 
             if not exp_timestamp or not isinstance(exp_timestamp, (int, float)):
                 msg = "Refresh token inválido: expiração ausente ou mal formatada"
@@ -176,6 +202,13 @@ class AuthenticationService:
 
             if not email or not jti or token_type != "refresh":
                 msg = "Refresh token inválido"
+                logger.warning(msg)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail=msg
+                )
+
+            if token_version is None:
+                msg = "Refresh token sem versão"
                 logger.warning(msg)
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED, detail=msg
@@ -210,6 +243,15 @@ class AuthenticationService:
                     status_code=status.HTTP_401_UNAUTHORIZED, detail=msg
                 )
 
+            if bool(token_version < user.versao_token):
+                msg = "Refresh token desatualizado (versão antiga)"
+                logger.warning(
+                    f"{msg} - token_ver: {token_version}, user_ver: {user.versao_token}"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"
+                )
+
             exp_datetime = datetime.fromtimestamp(
                 exp_timestamp, tz=ZoneInfo("America/Bahia")
             )
@@ -221,11 +263,13 @@ class AuthenticationService:
                 data=data,
                 expires_delta=timedelta(seconds=TOKEN_EXPIRE_SECONDS),
                 token_type="access",
+                user_token_version=user.versao_token,  # type: ignore
             )
             new_refresh_token = cls._create_token(
                 data=data,
                 expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
                 token_type="refresh",
+                user_token_version=user.versao_token,  # type: ignore
             )
 
             await db.commit()

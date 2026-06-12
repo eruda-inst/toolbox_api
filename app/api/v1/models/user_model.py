@@ -11,6 +11,7 @@ class User(db.Base):
     email = Column(String, nullable=False, unique=True)
     senha = Column(String, nullable=False)
     ativo = Column(Boolean, default=True)
+    versao_token = Column(Integer, nullable=False, server_default="1")
 
     criado_em = Column(
         TIMESTAMP(timezone=True),

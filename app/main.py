@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Toolbox API",
     description="API da plataforma de centralização de ferramentas utilizadas na Newnet",
-    version="0.29.2",
+    version="0.31.3",
     routes=api_v1_router.routes,
     lifespan=lifespan,
 )

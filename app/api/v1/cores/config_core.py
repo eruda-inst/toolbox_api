@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     token_expire_minutes: NonNegativeInt = 0
     refresh_token_expire_days: NonNegativeInt = 0
 
+    brevo_api_key: SecretStr = SecretStr("")
+    brevo_from_email: EmailStr = ""
+    brevo_from_name: str = ""
+
     secret_key: SecretStr = SecretStr("")
 
     @property

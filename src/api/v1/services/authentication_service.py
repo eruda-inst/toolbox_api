@@ -92,7 +92,7 @@ class AuthenticationService:
                     detail="Token payload is missing the 'ver' claim",
                 )
 
-            user = await cruds.UserCRUD.get_by(db=db, email=email)
+            user = await cruds.UserCRUD.read_by(db=db, email=email)
             if not user:
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED, detail="User not found"
@@ -149,7 +149,7 @@ class AuthenticationService:
                 500 on database error.
         """
         try:
-            user = await cruds.UserCRUD.get_by(db=db, email=email)
+            user = await cruds.UserCRUD.read_by(db=db, email=email)
             if not user:
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED, detail="User not found"
@@ -237,7 +237,7 @@ class AuthenticationService:
                     detail="Refresh token payload is missing the 'ver' claim",
                 )
 
-            user = await cruds.UserCRUD.get_by(db=db, email=email)
+            user = await cruds.UserCRUD.read_by(db=db, email=email)
             if not user:
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED, detail="User not found"

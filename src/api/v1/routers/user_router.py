@@ -25,7 +25,7 @@ async def create(
 
 
 @user_router.get(path="/", summary="List users with filters and pagination.")
-async def get_all_by(
+async def read_all_by(
     db: utilities.DatabaseDependency,
     _: Annotated[None, Depends(dependencies.has_permission("toolbox:usuarios:ver"))],
     page: utilities.PageQueryParameter = 1,
@@ -48,7 +48,7 @@ async def get_all_by(
 
     Supports partial matching on `full_name` and `email`, and exact matching on `is_active`. Results are paginated using `page` and `limit`, and the response includes metadata with the total item count.
     """
-    item_count, users = await cruds.UserCRUD.get_all_by(
+    item_count, users = await cruds.UserCRUD.read_all_by(
         db=db,
         page=page,
         limit=limit,

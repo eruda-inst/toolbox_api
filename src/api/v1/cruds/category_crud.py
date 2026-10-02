@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from fastapi import HTTPException, status
 from pydantic import NonNegativeInt, PositiveInt
 from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import models, schemas
@@ -15,17 +15,17 @@ class CategoryCRUD:
         db: AsyncSession, data: schemas.CategoryInSchema
     ) -> models.CategoryModel:
         """
-        Summary.
+        Create a new category.
 
         Args:
-            db (AsyncSession): Description.
-            data (schemas.CategoryInSchema): Description.
+            db (AsyncSession): The async database session.
+            data (schemas.CategoryInSchema): The data for the new category.
 
         Returns:
-            models.CategoryModel: Description.
+            models.CategoryModel: The newly created category.
 
         Raises:
-            HTTPException: Description.
+            HTTPException: 409 if a category with the same unique field (e.g., name) already exists.
         """
         category_data = data.model_dump()
         new_category = models.CategoryModel(**category_data)
@@ -37,7 +37,7 @@ class CategoryCRUD:
         except IntegrityError:
             await db.rollback()
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="Category already exists"
+                status_code=status.HTTP_409_CONFLICT, detail="Category already exists."
             )
 
         await db.refresh(new_category)
@@ -45,7 +45,7 @@ class CategoryCRUD:
         return new_category
 
     @staticmethod
-    async def get_all_by(
+    async def read_all_by(
         db: AsyncSession,
         page: PositiveInt,
         limit: PositiveInt,
@@ -112,7 +112,7 @@ class CategoryCRUD:
 
         if category is None:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Category not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Category not found."
             )
 
         update_data = data.model_dump(exclude_none=True)
@@ -127,9 +127,41 @@ class CategoryCRUD:
         except IntegrityError:
             await db.rollback()
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="Category already exists"
+                status_code=status.HTTP_409_CONFLICT, detail="Category already exists."
             )
 
         await db.refresh(category)
 
         return category
+
+    @staticmethod
+    async def delete(db: AsyncSession, id: PositiveInt) -> None:
+        """
+        Delete a category by ID.
+
+        Args:
+            db (AsyncSession): The async database session.
+            id (PositiveInt): The ID of the category to delete.
+
+        Raises:
+            HTTPException: 404 if no category with the given ID exists;
+                500 if the deletion fails at the database level.
+        """
+        stmt = select(models.CategoryModel).where(models.CategoryModel.id == id)
+        category = (await db.execute(stmt)).scalar_one_or_none()
+
+        if category is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Category not found."
+            )
+
+        await db.delete(category)
+
+        try:
+            await db.commit()
+        except SQLAlchemyError:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete category.",
+            )

@@ -30,7 +30,7 @@ async def create(
 
 
 @category_router.get(path="/", summary="List categories with filters and pagination.")
-async def get_all_by(
+async def read_all_by(
     db: utilities.DatabaseDependency,
     _: Annotated[None, Depends(dependencies.has_permission("toolbox:categorias:ver"))],
     page: utilities.PageQueryParameter = 1,
@@ -49,7 +49,7 @@ async def get_all_by(
 
     Supports partial matching on `name`, and exact matching on `is_active`. Results are paginated using `page` and `limit`, and the response includes metadata with the total item count.
     """
-    item_count, categories = await cruds.CategoryCRUD.get_all_by(
+    item_count, categories = await cruds.CategoryCRUD.read_all_by(
         db=db,
         page=page,
         limit=limit,
@@ -81,3 +81,23 @@ async def update(
     """
     updated_category = await cruds.CategoryCRUD.update(db=db, id=id, data=data)
     return schemas.CategoryOutSchema.model_validate(updated_category)
+
+
+@category_router.delete(
+    path="/id/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a category.",
+)
+async def delete(
+    db: utilities.DatabaseDependency,
+    _: Annotated[
+        None, Depends(dependencies.has_permission("toolbox:usuarios:excluir"))
+    ],
+    id: Annotated[int, Path(ge=1, description="ID of the category.", examples=[1])],
+) -> None:
+    """
+    Delete a category identified by its ID.
+
+    Removes the category with the given ID from the database. Returns no content on success (HTTP 204).
+    """
+    await cruds.CategoryCRUD.delete(db=db, id=id)

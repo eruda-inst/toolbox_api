@@ -14,7 +14,39 @@ ph = PasswordHasher()
 
 class UserCRUD:
     @staticmethod
-    async def get_all_by(
+    async def create(db: AsyncSession, data: schemas.UserInSchema) -> models.UserModel:
+        """
+        Create a new user.
+
+        Args:
+            db (AsyncSession): The async database session.
+            data (schemas.UserInSchema): The data for the new user.
+
+        Returns:
+            models.UserModel: The newly created user.
+
+        Raises:
+            HTTPException: 409 if a user with the same unique field (e.g., email) already exists.
+        """
+        user_data = data.model_dump()
+        new_user = models.UserModel(**user_data)
+
+        db.add(new_user)
+
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="User already exists."
+            )
+
+        await db.refresh(new_user)
+
+        return new_user
+
+    @staticmethod
+    async def read_all_by(
         db: AsyncSession,
         page: PositiveInt,
         limit: PositiveInt,
@@ -63,118 +95,7 @@ class UserCRUD:
         return item_count, users
 
     @staticmethod
-    async def update(
-        db: AsyncSession, id: PositiveInt, data: schemas.UserUpdateSchema
-    ) -> models.UserModel:
-        """
-        Update an existing user with the provided fields.
-
-        Only fields that are not None in `data` are applied to the user.
-
-        Args:
-            db (AsyncSession): The async database session.
-            id (PositiveInt): The ID of the user to update.
-            data (schemas.UserUpdateSchema): The fields to update.
-
-        Returns:
-            models.UserModel: The updated user.
-
-        Raises:
-            HTTPException: 404 if no user with the given ID exists;
-                409 if the update violates a uniqueness constraint (e.g., duplicate email).
-        """
-        stmt = select(models.UserModel).where(models.UserModel.id == id)
-        user = (await db.execute(stmt)).scalar_one_or_none()
-
-        if user is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-            )
-
-        update_data = data.model_dump(exclude_none=True)
-
-        for field, value in update_data.items():
-            setattr(user, field, value)
-
-        db.add(user)
-
-        try:
-            await db.commit()
-        except IntegrityError:
-            await db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="User already exists"
-            )
-
-        await db.refresh(user)
-
-        return user
-
-    @staticmethod
-    async def delete(db: AsyncSession, id: PositiveInt) -> None:
-        """
-        Delete a user by ID.
-
-        Args:
-            db (AsyncSession): The async database session.
-            id (PositiveInt): The ID of the user to delete.
-
-        Raises:
-            HTTPException: 404 if no user with the given ID exists;
-                500 if the deletion fails at the database level.
-        """
-        stmt = select(models.UserModel).where(models.UserModel.id == id)
-        user = (await db.execute(stmt)).scalar_one_or_none()
-
-        if user is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-            )
-
-        await db.delete(user)
-
-        try:
-            await db.commit()
-        except SQLAlchemyError:
-            await db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Detail"
-            )
-
-    @staticmethod
-    async def create(db: AsyncSession, data: schemas.UserInSchema) -> models.UserModel:
-        """
-        Create a new user.
-
-        Args:
-            db (AsyncSession): The async database session.
-            data (schemas.UserInSchema): The data for the new user.
-
-        Returns:
-            models.UserModel: The newly created user.
-
-        Raises:
-            HTTPException: 409 if a user with the same unique field (e.g., email) already exists.
-        """
-        user_data = data.model_dump()
-        new_user = models.UserModel(**user_data)
-
-        db.add(new_user)
-
-        try:
-            await db.commit()
-        except IntegrityError:
-            await db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="User already exists"
-            )
-
-        await db.refresh(new_user)
-
-        return new_user
-
-    @staticmethod
-    async def get_by(
+    async def read_by(
         db: AsyncSession, id: PositiveInt | None = None, email: EmailStr | None = None
     ) -> models.UserModel:
         """
@@ -201,14 +122,94 @@ class UserCRUD:
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Provide either user ID or E-mail",
+                detail="Provide either user ID or E-mail.",
             )
 
         user = (await db.execute(stmt)).scalar_one_or_none()
 
         if user is None:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found."
             )
 
         return user
+
+    @staticmethod
+    async def update(
+        db: AsyncSession, id: PositiveInt, data: schemas.UserUpdateSchema
+    ) -> models.UserModel:
+        """
+        Update an existing user with the provided fields.
+
+        Only fields that are not None in `data` are applied to the user.
+
+        Args:
+            db (AsyncSession): The async database session.
+            id (PositiveInt): The ID of the user to update.
+            data (schemas.UserUpdateSchema): The fields to update.
+
+        Returns:
+            models.UserModel: The updated user.
+
+        Raises:
+            HTTPException: 404 if no user with the given ID exists;
+                409 if the update violates a uniqueness constraint (e.g., duplicate email).
+        """
+        stmt = select(models.UserModel).where(models.UserModel.id == id)
+        user = (await db.execute(stmt)).scalar_one_or_none()
+
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found."
+            )
+
+        update_data = data.model_dump(exclude_none=True)
+
+        for field, value in update_data.items():
+            setattr(user, field, value)
+
+        db.add(user)
+
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="User already exists."
+            )
+
+        await db.refresh(user)
+
+        return user
+
+    @staticmethod
+    async def delete(db: AsyncSession, id: PositiveInt) -> None:
+        """
+        Delete a user by ID.
+
+        Args:
+            db (AsyncSession): The async database session.
+            id (PositiveInt): The ID of the user to delete.
+
+        Raises:
+            HTTPException: 404 if no user with the given ID exists;
+                500 if the deletion fails at the database level.
+        """
+        stmt = select(models.UserModel).where(models.UserModel.id == id)
+        user = (await db.execute(stmt)).scalar_one_or_none()
+
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found."
+            )
+
+        await db.delete(user)
+
+        try:
+            await db.commit()
+        except SQLAlchemyError:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete user.",
+            )

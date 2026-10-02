@@ -1,4 +1,8 @@
+from collections.abc import Sequence
+
 from fastapi import HTTPException, status
+from pydantic import NonNegativeInt, PositiveInt
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,3 +43,45 @@ class CategoryCRUD:
         await db.refresh(new_category)
 
         return new_category
+
+    @staticmethod
+    async def get_all_by(
+        db: AsyncSession,
+        page: PositiveInt,
+        limit: PositiveInt,
+        name: str | None,
+        is_active: bool | None,
+    ) -> tuple[NonNegativeInt, Sequence[models.CategoryModel]]:
+        """
+        Retrieve a paginated list of categories, optionally filtered by the given criteria.
+
+        Args:
+            db (AsyncSession): The async database session.
+            page (PositiveInt): The page number to retrieve (1-based).
+            limit (PositiveInt): The maximum number of categories per page.
+            name (str | None): Filter categories whose name contains this substring (case-insensitive).
+            is_active (bool | None): Filter categories by their active status.
+
+        Returns:
+            tuple[NonNegativeInt, Sequence[models.CategoryModel]]: The total number of categories matching the filters, and the page of categories ordered by descending ID.
+        """
+        stmt = select(models.CategoryModel)
+        count_stmt = select(func.count(models.CategoryModel.id))
+
+        if name is not None:
+            stmt = stmt.where(models.CategoryModel.name.ilike(f"%{name}%"))
+            count_stmt = count_stmt.where(models.CategoryModel.name.ilike(f"%{name}%"))
+        if is_active is not None:
+            stmt = stmt.where(models.CategoryModel.is_active == is_active)
+            count_stmt = count_stmt.where(models.CategoryModel.is_active == is_active)
+
+        item_count = (await db.execute(count_stmt)).scalar()
+        item_count = item_count if item_count is not None else 0
+
+        stmt = stmt.order_by(models.CategoryModel.id.desc())
+
+        offset = (page - 1) * item_count
+        stmt = stmt.offset(offset).limit(limit)
+
+        categories = (await db.execute(stmt)).scalars().all()
+        return item_count, categories

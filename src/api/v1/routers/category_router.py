@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 from fastapi.params import Body, Depends
 
 from .. import cruds, dependencies, schemas, utilities
@@ -27,3 +27,39 @@ async def create(
     """
     created_category = await cruds.CategoryCRUD.create(db=db, data=data)
     return schemas.CategoryOutSchema.model_validate(created_category)
+
+
+@category_router.get(path="/", summary="List categories with filters and pagination.")
+async def get_all_by(
+    db: utilities.DatabaseDependency,
+    _: Annotated[None, Depends(dependencies.has_permission("toolbox:categorias:ver"))],
+    page: utilities.PageQueryParameter = 1,
+    limit: utilities.LimitQueryParameter = 10,
+    name: Annotated[
+        str | None,
+        Query(description="Partial filter by name.", examples=["My Category"]),
+    ] = None,
+    is_active: Annotated[
+        bool | None,
+        Query(description="Filter by status.", examples=[True]),
+    ] = None,
+) -> schemas.ListOutSchema[schemas.CategoryOutSchema]:
+    """
+    Retrieve a paginated list of categories, optionally filtered.
+
+    Supports partial matching on `name`, and exact matching on `is_active`. Results are paginated using `page` and `limit`, and the response includes metadata with the total item count.
+    """
+    item_count, categories = await cruds.CategoryCRUD.get_all_by(
+        db=db,
+        page=page,
+        limit=limit,
+        name=name,
+        is_active=is_active,
+    )
+    return schemas.ListOutSchema[schemas.CategoryOutSchema](
+        data=[
+            schemas.CategoryOutSchema.model_validate(category)
+            for category in categories
+        ],
+        meta=schemas.MetaOutSchema(page=page, item_count=item_count, limit=limit),
+    )

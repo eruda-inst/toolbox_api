@@ -71,3 +71,19 @@ async def update(
     """
     updated_role = await cruds.RoleCRUD.update(db=db, id=id, data=data)
     return schemas.RoleOutSchema.model_validate(updated_role)
+
+
+@role_router.delete(
+    path="/id/{id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a role."
+)
+async def delete(
+    db: utilities.DatabaseDependency,
+    _: Annotated[None, Depends(dependencies.has_permission("toolbox:perfis:excluir"))],
+    id: Annotated[int, Path(ge=1, description="ID of the role.", examples=[1])],
+) -> None:
+    """
+    Delete a role identified by its ID.
+
+    Removes the role with the given ID from the database. Returns no content on success (HTTP 204).
+    """
+    await cruds.RoleCRUD.delete(db=db, id=id)

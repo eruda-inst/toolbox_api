@@ -88,3 +88,52 @@ class PermissionCRUD:
 
         permissions = (await db.execute(stmt)).scalars().all()
         return item_count, permissions
+
+    @staticmethod
+    async def update(
+        db: AsyncSession, id: PositiveInt, data: schemas.PermissionUpdateSchema
+    ) -> models.PermissionModel:
+        """
+        Update an existing permission with the provided fields.
+
+        Only fields that are not None in `data` are applied to the permission.
+
+        Args:
+            db (AsyncSession): The async database session.
+            id (PositiveInt): The ID of the permission to update.
+            data (schemas.PermissionUpdateSchema): The fields to update.
+
+        Returns:
+            models.PermissionModel: The updated permission.
+
+        Raises:
+            HTTPException: 404 if no permission with the given ID exists;
+                409 if the update violates a uniqueness constraint (e.g., duplicate name).
+        """
+        stmt = select(models.PermissionModel).where(models.PermissionModel.id == id)
+        permission = (await db.execute(stmt)).scalar_one_or_none()
+
+        if permission is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found."
+            )
+
+        update_data = data.model_dump(exclude_none=True)
+
+        for field, value in update_data.items():
+            setattr(permission, field, value)
+
+        db.add(permission)
+
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Permission already exists.",
+            )
+
+        await db.refresh(permission)
+
+        return permission

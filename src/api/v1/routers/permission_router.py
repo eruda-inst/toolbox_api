@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Path, Query, status
 from fastapi.params import Body, Depends
 
 from .. import cruds, dependencies, schemas, utilities
@@ -60,3 +60,23 @@ async def read_all_by(
         ],
         meta=schemas.MetaOutSchema(page=page, item_count=item_count, limit=limit),
     )
+
+
+@permission_router.patch(path="/id/{id}", summary="Update an existing permission.")
+async def update(
+    db: utilities.DatabaseDependency,
+    _: Annotated[
+        None, Depends(dependencies.has_permission("toolbox:permissoes:editar"))
+    ],
+    id: Annotated[int, Path(ge=1, description="ID of the permission.", examples=[1])],
+    data: Annotated[
+        schemas.PermissionUpdateSchema, Body(description="Data of the permission.")
+    ],
+) -> schemas.PermissionOutSchema:
+    """
+    Partially update a permission identified by its ID.
+
+    Applies the provided fields from the update schema to the permission with the given ID and returns the updated permission record.
+    """
+    updated_permission = await cruds.PermissionCRUD.update(db=db, id=id, data=data)
+    return schemas.PermissionOutSchema.model_validate(updated_permission)

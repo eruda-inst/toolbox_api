@@ -22,6 +22,24 @@ class PermissionInSchema(BaseModel):
     )
 
 
+class PermissionUpdateSchema(BaseModel):
+    code: str | None = Field(
+        default=None,
+        description="Code of the permission.",
+        examples=["tool:resource:action"],
+    )
+    description: str | None = Field(
+        default=None,
+        description="Description of the permission.",
+        examples=["This permission does stuff."],
+    )
+    is_active: bool | None = Field(
+        default=None,
+        description="Whether the permission is active.",
+        examples=[True],
+    )
+
+
 class PermissionOutSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

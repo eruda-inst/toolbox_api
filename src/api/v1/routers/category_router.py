@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Path, Query, status
 from fastapi.params import Body, Depends
 
 from .. import cruds, dependencies, schemas, utilities
@@ -63,3 +63,21 @@ async def get_all_by(
         ],
         meta=schemas.MetaOutSchema(page=page, item_count=item_count, limit=limit),
     )
+
+
+@category_router.patch(path="/id/{id}", summary="Update an existing category.")
+async def update(
+    db: utilities.DatabaseDependency,
+    _: Annotated[None, Depends(dependencies.has_permission("toolbox:usuarios:editar"))],
+    id: Annotated[int, Path(ge=1, description="ID of the category.", examples=[1])],
+    data: Annotated[
+        schemas.CategoryUpdateSchema, Body(description="Data of the category.")
+    ],
+) -> schemas.CategoryOutSchema:
+    """
+    Partially update a category identified by its ID.
+
+    Applies the provided fields from the update schema to the category with the given ID and returns the updated category record.
+    """
+    updated_category = await cruds.CategoryCRUD.update(db=db, id=id, data=data)
+    return schemas.CategoryOutSchema.model_validate(updated_category)

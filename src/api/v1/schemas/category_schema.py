@@ -10,8 +10,17 @@ class CategoryInSchema(BaseModel):
     name: str = Field(description="Name of the category.", examples=["My Category"])
     is_active: bool | None = Field(
         default=True,
-        description="Whether the account of the user is active.",
+        description="Whether the category is active.",
         examples=[True],
+    )
+
+
+class CategoryUpdateSchema(BaseModel):
+    name: str | None = Field(
+        default=None, description="Name of the category.", examples=["My Category"]
+    )
+    is_active: bool | None = Field(
+        default=None, description="Whether the category is active.", examples=[True]
     )
 
 
@@ -22,7 +31,7 @@ class CategoryOutSchema(BaseModel):
     name: str = Field(description="Name of the category.", examples=["My Category"])
     is_active: bool | None = Field(
         default=True,
-        description="Whether the account of the category is active.",
+        description="Whether the category is active.",
         examples=[True],
     )
     created_at: dt.datetime = Field(

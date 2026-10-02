@@ -85,3 +85,51 @@ class CategoryCRUD:
 
         categories = (await db.execute(stmt)).scalars().all()
         return item_count, categories
+
+    @staticmethod
+    async def update(
+        db: AsyncSession, id: PositiveInt, data: schemas.CategoryUpdateSchema
+    ) -> models.CategoryModel:
+        """
+        Update an existing category with the provided fields.
+
+        Only fields that are not None in `data` are applied to the category.
+
+        Args:
+            db (AsyncSession): The async database session.
+            id (PositiveInt): The ID of the category to update.
+            data (schemas.CategoryUpdateSchema): The fields to update.
+
+        Returns:
+            models.CategoryModel: The updated category.
+
+        Raises:
+            HTTPException: 404 if no category with the given ID exists;
+                409 if the update violates a uniqueness constraint (e.g., duplicate name).
+        """
+        stmt = select(models.CategoryModel).where(models.CategoryModel.id == id)
+        category = (await db.execute(stmt)).scalar_one_or_none()
+
+        if category is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Category not found"
+            )
+
+        update_data = data.model_dump(exclude_none=True)
+
+        for field, value in update_data.items():
+            setattr(category, field, value)
+
+        db.add(category)
+
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Category already exists"
+            )
+
+        await db.refresh(category)
+
+        return category

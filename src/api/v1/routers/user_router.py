@@ -18,8 +18,7 @@ async def create(
     """
     Create a new user with the provided data and return the created record.
 
-    Persists a new user to the database using the supplied input schema
-    and returns the newly created user, including its generated ID.
+    Persists a new user to the database using the supplied input schema and returns the newly created user, including its generated ID.
     """
     created_user = await cruds.UserCRUD.create(db=db, data=data)
     return schemas.UserOutSchema.model_validate(created_user)
@@ -47,9 +46,7 @@ async def get_all_by(
     """
     Retrieve a paginated list of users, optionally filtered.
 
-    Supports partial matching on `full_name` and `email`, and exact
-    matching on `is_active`. Results are paginated using `page` and
-    `limit`, and the response includes metadata with the total item count.
+    Supports partial matching on `full_name` and `email`, and exact matching on `is_active`. Results are paginated using `page` and `limit`, and the response includes metadata with the total item count.
     """
     item_count, users = await cruds.UserCRUD.get_all_by(
         db=db,
@@ -75,8 +72,7 @@ async def update(
     """
     Partially update a user identified by its ID.
 
-    Applies the provided fields from the update schema to the user with
-    the given ID and returns the updated user record.
+    Applies the provided fields from the update schema to the user with the given ID and returns the updated user record.
     """
     updated_user = await cruds.UserCRUD.update(db=db, id=id, data=data)
     return schemas.UserOutSchema.model_validate(updated_user)
@@ -95,7 +91,6 @@ async def delete(
     """
     Delete a user identified by its ID.
 
-    Removes the user with the given ID from the database. Returns no
-    content on success (HTTP 204).
+    Removes the user with the given ID from the database. Returns no content on success (HTTP 204).
     """
     await cruds.UserCRUD.delete(db=db, id=id)

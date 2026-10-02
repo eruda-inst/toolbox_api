@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 from fastapi.params import Body, Depends
 
 from .. import cruds, dependencies, schemas, utilities
@@ -23,3 +23,35 @@ async def create(
     """
     created_role = await cruds.RoleCRUD.create(db=db, data=data)
     return schemas.RoleOutSchema.model_validate(created_role)
+
+
+@role_router.get(path="/", summary="List roles with filters and pagination.")
+async def read_all_by(
+    db: utilities.DatabaseDependency,
+    _: Annotated[None, Depends(dependencies.has_permission("toolbox:perfis:ver"))],
+    page: utilities.PageQueryParameter = 1,
+    limit: utilities.LimitQueryParameter = 10,
+    code: Annotated[
+        str | None,
+        Query(description="Partial filter by code.", examples=["tool_resource_role"]),
+    ] = None,
+    title: Annotated[
+        str | None,
+        Query(description="Partial filter by title.", examples=["Manager of users"]),
+    ] = None,
+    is_active: Annotated[
+        bool | None, Query(description="Filter by status.", examples=[True])
+    ] = None,
+) -> schemas.ListOutSchema[schemas.RoleOutSchema]:
+    """
+    Retrieve a paginated list of roles, optionally filtered.
+
+    Supports partial matching on `code` and `title`, and exact matching on `is_active`. Results are paginated using `page` and `limit`, and the response includes metadata with the total item count.
+    """
+    item_count, roles = await cruds.RoleCRUD.read_all_by(
+        db=db, page=page, limit=limit, code=code, title=title, is_active=is_active
+    )
+    return schemas.ListOutSchema[schemas.RoleOutSchema](
+        data=[schemas.RoleOutSchema.model_validate(role) for role in roles],
+        meta=schemas.MetaOutSchema(page=page, item_count=item_count, limit=limit),
+    )

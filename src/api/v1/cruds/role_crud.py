@@ -1,4 +1,8 @@
+from collections.abc import Sequence
+
 from fastapi import HTTPException, status
+from pydantic import NonNegativeInt, PositiveInt
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -37,3 +41,50 @@ class RoleCRUD:
         await db.refresh(new_role)
 
         return new_role
+
+    @staticmethod
+    async def read_all_by(
+        db: AsyncSession,
+        page: PositiveInt,
+        limit: PositiveInt,
+        code: str | None,
+        title: str | None,
+        is_active: bool | None,
+    ) -> tuple[NonNegativeInt, Sequence[models.RoleModel]]:
+        """
+        Retrieve a paginated list of roles, optionally filtered by the given criteria.
+
+        Args:
+            db (AsyncSession): The async database session.
+            page (PositiveInt): The page number to retrieve (1-based).
+            limit (PositiveInt): The maximum number of roles per page.
+            code (str | None): Filter roles whose code contains this substring (case-insensitive).
+            title (str | None): Filter roles whose title contains this substring (case-insensitive).
+            is_active (bool | None): Filter roles by their active status.
+
+        Returns:
+            tuple[NonNegativeInt, Sequence[models.RoleModel]]: The total number of roles matching the filters, and the page of roles ordered by descending ID.
+        """
+        stmt = select(models.RoleModel)
+        count_stmt = select(func.count(models.RoleModel.id))
+
+        if code is not None:
+            stmt = stmt.where(models.RoleModel.code.ilike(f"%{code}%"))
+            count_stmt = count_stmt.where(models.RoleModel.code.ilike(f"%{code}%"))
+        if title is not None:
+            stmt = stmt.where(models.RoleModel.title.ilike(f"%{title}%"))
+            count_stmt = count_stmt.where(models.RoleModel.title.ilike(f"%{title}%"))
+        if is_active is not None:
+            stmt = stmt.where(models.RoleModel.is_active == is_active)
+            count_stmt = count_stmt.where(models.RoleModel.is_active == is_active)
+
+        item_count = (await db.execute(count_stmt)).scalar()
+        item_count = item_count if item_count is not None else 0
+
+        stmt = stmt.order_by(models.RoleModel.id.desc())
+
+        offset = (page - 1) * item_count
+        stmt = stmt.offset(offset).limit(limit)
+
+        roles = (await db.execute(stmt)).scalars().all()
+        return item_count, roles

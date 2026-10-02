@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Path, Query, status
 from fastapi.params import Body, Depends
 
 from .. import cruds, dependencies, schemas, utilities
@@ -55,3 +55,19 @@ async def read_all_by(
         data=[schemas.RoleOutSchema.model_validate(role) for role in roles],
         meta=schemas.MetaOutSchema(page=page, item_count=item_count, limit=limit),
     )
+
+
+@role_router.patch(path="/id/{id}", summary="Update an existing role.")
+async def update(
+    db: utilities.DatabaseDependency,
+    _: Annotated[None, Depends(dependencies.has_permission("toolbox:perfis:editar"))],
+    id: Annotated[int, Path(ge=1, description="ID of the role.", examples=[1])],
+    data: Annotated[schemas.RoleUpdateSchema, Body(description="Data of the role.")],
+) -> schemas.RoleOutSchema:
+    """
+    Partially update a role identified by its ID.
+
+    Applies the provided fields from the update schema to the role with the given ID and returns the updated role record.
+    """
+    updated_role = await cruds.RoleCRUD.update(db=db, id=id, data=data)
+    return schemas.RoleOutSchema.model_validate(updated_role)

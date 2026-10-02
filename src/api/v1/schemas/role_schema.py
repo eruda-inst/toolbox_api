@@ -21,6 +21,25 @@ class RoleInSchema(BaseModel):
     )
 
 
+class RoleUpdateSchema(BaseModel):
+    code: str | None = Field(
+        default=None, description="Code of the role.", examples=["tool_resource_role"]
+    )
+    title: str | None = Field(
+        default=None, description="Title of the role.", examples=["Manager of users"]
+    )
+    description: str | None = Field(
+        default=None,
+        description="Description of the role.",
+        examples=["This role does stuff"],
+    )
+    is_active: bool | None = Field(
+        default=None,
+        description="Whether the role is active.",
+        examples=[True],
+    )
+
+
 class RoleOutSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

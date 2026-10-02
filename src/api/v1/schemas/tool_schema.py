@@ -26,6 +26,28 @@ class ToolInSchema(BaseModel):
     )
 
 
+class ToolUpdateSchema(BaseModel):
+    name: str | None = Field(
+        default=None, description="Name of the tool.", examples=["Toolbox"]
+    )
+    description: str | None = Field(
+        default=None,
+        description="Description of the tool.",
+        examples=["This tool does stuff"],
+    )
+    is_active: bool | None = Field(
+        default=None, description="Whether the tool is active.", examples=[True]
+    )
+    url: str | None = Field(
+        default=None,
+        description="URL of the tool.",
+        examples=["http://localhost:3000/tool"],
+    )
+    category_id: PositiveInt | None = Field(
+        ge=1, default=None, description="ID of the category of the tool.", examples=[1]
+    )
+
+
 class ToolOutSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

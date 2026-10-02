@@ -63,5 +63,54 @@ class ToolCRUD:
         offset = (page - 1) * item_count
         stmt = stmt.offset(offset).limit(limit)
 
-        roles = (await db.execute(stmt)).scalars().all()
-        return item_count, roles
+        tools = (await db.execute(stmt)).scalars().all()
+        return item_count, tools
+
+    @staticmethod
+    async def update(
+        db: AsyncSession, id: PositiveInt, data: schemas.ToolUpdateSchema
+    ) -> models.ToolModel:
+        """
+        Update an existing tool with the provided fields.
+
+        Only fields that are not None in `data` are applied to the tool.
+
+        Args:
+            db (AsyncSession): The async database session.
+            id (PositiveInt): The ID of the tool to update.
+            data (schemas.ToolUpdateSchema): The fields to update.
+
+        Returns:
+            models.ToolModel: The updated tool.
+
+        Raises:
+            HTTPException: 404 if no tool with the given ID exists;
+                409 if the update violates a uniqueness constraint (e.g., duplicate code).
+        """
+        stmt = select(models.ToolModel).where(models.ToolModel.id == id)
+        tool = (await db.execute(stmt)).scalar_one_or_none()
+
+        if tool is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Tool not found."
+            )
+
+        update_data = data.model_dump(exclude_none=True)
+
+        for field, value in update_data.items():
+            setattr(tool, field, value)
+
+        db.add(tool)
+
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Tool already exists.",
+            )
+
+        await db.refresh(tool)
+
+        return tool

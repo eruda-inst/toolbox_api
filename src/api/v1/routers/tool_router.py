@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Path, Query, status
 from fastapi.params import Body, Depends
 
 from .. import cruds, dependencies, schemas, utilities
@@ -65,3 +65,21 @@ async def read_all_by(
         data=[schemas.ToolOutSchema.model_validate(tool) for tool in tools],
         meta=schemas.MetaOutSchema(page=page, item_count=item_count, limit=limit),
     )
+
+
+@tool_router.patch(path="/id/{id}", summary="Update an existing tool.")
+async def update(
+    db: utilities.DatabaseDependency,
+    _: Annotated[
+        None, Depends(dependencies.has_permission("toolbox:ferramentas:editar"))
+    ],
+    id: Annotated[int, Path(ge=1, description="ID of the tool.", examples=[1])],
+    data: Annotated[schemas.ToolUpdateSchema, Body(description="Data of the tool.")],
+) -> schemas.ToolOutSchema:
+    """
+    Partially update a tool identified by its ID.
+
+    Applies the provided fields from the update schema to the tool with the given ID and returns the updated tool record.
+    """
+    updated_tool = await cruds.ToolCRUD.update(db=db, id=id, data=data)
+    return schemas.ToolOutSchema.model_validate(updated_tool)

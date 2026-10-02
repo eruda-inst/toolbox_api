@@ -80,3 +80,23 @@ async def update(
     """
     updated_permission = await cruds.PermissionCRUD.update(db=db, id=id, data=data)
     return schemas.PermissionOutSchema.model_validate(updated_permission)
+
+
+@permission_router.delete(
+    path="/id/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a permission.",
+)
+async def delete(
+    db: utilities.DatabaseDependency,
+    _: Annotated[
+        None, Depends(dependencies.has_permission("toolbox:permissoes:excluir"))
+    ],
+    id: Annotated[int, Path(ge=1, description="ID of the permission.", examples=[1])],
+) -> None:
+    """
+    Delete a permission identified by its ID.
+
+    Removes the permission with the given ID from the database. Returns no content on success (HTTP 204).
+    """
+    await cruds.PermissionCRUD.delete(db=db, id=id)

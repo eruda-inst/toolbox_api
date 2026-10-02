@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from fastapi import HTTPException, status
 from pydantic import NonNegativeInt, PositiveInt
 from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import models, schemas
@@ -137,3 +137,35 @@ class PermissionCRUD:
         await db.refresh(permission)
 
         return permission
+
+    @staticmethod
+    async def delete(db: AsyncSession, id: PositiveInt) -> None:
+        """
+        Delete a permission by ID.
+
+        Args:
+            db (AsyncSession): The async database session.
+            id (PositiveInt): The ID of the permission to delete.
+
+        Raises:
+            HTTPException: 404 if no permission with the given ID exists;
+                500 if the deletion fails at the database level.
+        """
+        stmt = select(models.PermissionModel).where(models.PermissionModel.id == id)
+        permission = (await db.execute(stmt)).scalar_one_or_none()
+
+        if permission is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found."
+            )
+
+        await db.delete(permission)
+
+        try:
+            await db.commit()
+        except SQLAlchemyError:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete permission.",
+            )

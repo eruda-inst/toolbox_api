@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 from fastapi.params import Body, Depends
 
 from .. import cruds, dependencies, schemas, utilities
@@ -25,3 +25,43 @@ async def create(
     """
     created_tool = await cruds.ToolCRUD.create(db=db, data=data)
     return schemas.ToolOutSchema.model_validate(created_tool)
+
+
+@tool_router.get(path="/", summary="List tools with filters and pagination.")
+async def read_all_by(
+    db: utilities.DatabaseDependency,
+    _: Annotated[None, Depends(dependencies.has_permission("toolbox:ferramentas:ver"))],
+    page: utilities.PageQueryParameter = 1,
+    limit: utilities.LimitQueryParameter = 10,
+    name: Annotated[
+        str | None,
+        Query(description="Partial filter by name.", examples=["Toolbox"]),
+    ] = None,
+    category_name: Annotated[
+        str | None,
+        Query(
+            description="Partial filter by the name of the category.",
+            examples=["My Category"],
+        ),
+    ] = None,
+    is_active: Annotated[
+        bool | None, Query(description="Filter by status.", examples=[True])
+    ] = None,
+) -> schemas.ListOutSchema[schemas.ToolOutSchema]:
+    """
+    Retrieve a paginated list of tools, optionally filtered.
+
+    Supports partial matching on `name` and `category_name`, and exact matching on `is_active`. Results are paginated using `page` and `limit`, and the response includes metadata with the total item count.
+    """
+    item_count, tools = await cruds.ToolCRUD.read_all_by(
+        db=db,
+        page=page,
+        limit=limit,
+        name=name,
+        category_name=category_name,
+        is_active=is_active,
+    )
+    return schemas.ListOutSchema[schemas.ToolOutSchema](
+        data=[schemas.ToolOutSchema.model_validate(tool) for tool in tools],
+        meta=schemas.MetaOutSchema(page=page, item_count=item_count, limit=limit),
+    )

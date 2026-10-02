@@ -83,7 +83,7 @@ class RoleCRUD:
 
         stmt = stmt.order_by(models.RoleModel.id.desc())
 
-        offset = (page - 1) * item_count
+        offset = (page - 1) * limit
         stmt = stmt.offset(offset).limit(limit)
 
         roles = (await db.execute(stmt)).scalars().all()

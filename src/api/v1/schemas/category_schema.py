@@ -27,7 +27,7 @@ class CategoryUpdateSchema(BaseModel):
 class CategoryOutSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: PositiveInt = Field(ge=1, description="ID of the category.", examples=[1])
+    id: PositiveInt = Field(description="ID of the category.", examples=[1])
     name: str = Field(description="Name of the category.", examples=["My Category"])
     is_active: bool | None = Field(
         default=True,

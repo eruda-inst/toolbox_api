@@ -22,7 +22,7 @@ class ToolInSchema(BaseModel):
         examples=["http://localhost:3000/tool"],
     )
     category_id: PositiveInt | None = Field(
-        ge=1, default=None, description="ID of the category of the tool.", examples=[1]
+        default=None, description="ID of the category of the tool.", examples=[1]
     )
 
 
@@ -44,20 +44,22 @@ class ToolUpdateSchema(BaseModel):
         examples=["http://localhost:3000/tool"],
     )
     category_id: PositiveInt | None = Field(
-        ge=1, default=None, description="ID of the category of the tool.", examples=[1]
+        default=None, description="ID of the category of the tool.", examples=[1]
     )
 
 
 class ToolOutSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: PositiveInt = Field(ge=1, description="ID of the tool.", examples=[1])
+    id: PositiveInt = Field(description="ID of the tool.", examples=[1])
     name: str = Field(description="Name of the tool.", examples=["Toolbox"])
-    description: str = Field(
-        description="Description of the tool.", examples=["This tool does stuff"]
+    description: str | None = Field(
+        default=None,
+        description="Description of the tool.",
+        examples=["This tool does stuff"],
     )
     is_active: bool | None = Field(
-        default=True, description="Whether the tool is active", examples=[True]
+        default=True, description="Whether the tool is active.", examples=[True]
     )
     url: str | None = Field(
         default=None,
@@ -65,7 +67,7 @@ class ToolOutSchema(BaseModel):
         examples=["http://localhost:3000/tool"],
     )
     category_id: PositiveInt | None = Field(
-        default=None, description="ID of the category of the tool.", examples=[12]
+        default=None, description="ID of the category of the tool.", examples=[1]
     )
     category_name: str | None = Field(
         default=None,
@@ -74,12 +76,12 @@ class ToolOutSchema(BaseModel):
     )
     created_at: dt.datetime = Field(
         description="Timestamp when the tool was created.",
-        examples=["YYYY-MM-DDTHH:mm:ssZ"],
+        examples=["2024-01-15T10:30:00Z"],
     )
     updated_at: dt.datetime | None = Field(
         default=None,
         description="Timestamp when the tool was last updated.",
-        examples=["YYYY-MM-DDTHH:mm:ssZ"],
+        examples=["2024-01-15T10:30:00Z"],
     )
 
     @field_serializer("created_at", "updated_at")

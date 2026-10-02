@@ -6,9 +6,9 @@ T = TypeVar("T")
 
 
 class MetaOutSchema(BaseModel):
-    page: PositiveInt = Field(ge=1, description="Current page.", examples=[1])
-    limit: PositiveInt = Field(ge=1, description="Total items per page.", examples=[10])
-    item_count: NonNegativeInt = Field(ge=0, description="Total items.", examples=[100])
+    page: PositiveInt = Field(description="Current page.", examples=[1])
+    limit: PositiveInt = Field(description="Total items per page.", examples=[10])
+    item_count: NonNegativeInt = Field(description="Total items.", examples=[100])
 
     @computed_field(description="Total pages.", examples=[10])
     @property

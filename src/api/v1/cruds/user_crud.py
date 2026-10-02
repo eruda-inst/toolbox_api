@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 
-from argon2 import PasswordHasher
 from fastapi import HTTPException, status
 from pydantic import EmailStr, NonNegativeInt, PositiveInt
 from sqlalchemy import func, select
@@ -9,14 +8,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import models, schemas
 
-ph = PasswordHasher()
-
 
 class UserCRUD:
     @staticmethod
     async def create(db: AsyncSession, data: schemas.UserInSchema) -> models.UserModel:
         """
         Create a new user.
+
+        The password is already hashed by `UserInSchema`'s field validator,
+        so it must not be hashed again here.
 
         Args:
             db (AsyncSession): The async database session.
@@ -88,7 +88,7 @@ class UserCRUD:
 
         stmt = stmt.order_by(models.UserModel.id.desc())
 
-        offset = (page - 1) * item_count
+        offset = (page - 1) * limit
         stmt = stmt.offset(offset).limit(limit)
 
         users = (await db.execute(stmt)).scalars().all()
@@ -142,6 +142,8 @@ class UserCRUD:
         Update an existing user with the provided fields.
 
         Only fields that are not None in `data` are applied to the user.
+        Password, if provided, is already hashed by `UserUpdateSchema`'s
+        field validator and must not be hashed again here.
 
         Args:
             db (AsyncSession): The async database session.

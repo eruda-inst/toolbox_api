@@ -80,7 +80,7 @@ class CategoryCRUD:
 
         stmt = stmt.order_by(models.CategoryModel.id.desc())
 
-        offset = (page - 1) * item_count
+        offset = (page - 1) * limit
         stmt = stmt.offset(offset).limit(limit)
 
         categories = (await db.execute(stmt)).scalars().all()

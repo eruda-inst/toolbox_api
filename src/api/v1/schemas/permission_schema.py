@@ -43,7 +43,7 @@ class PermissionUpdateSchema(BaseModel):
 class PermissionOutSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: PositiveInt = Field(ge=1, description="ID of the permission.", examples=[1])
+    id: PositiveInt = Field(description="ID of the permission.", examples=[1])
     code: str = Field(
         description="Code of the permission.", examples=["tool:resource:action"]
     )
@@ -59,12 +59,12 @@ class PermissionOutSchema(BaseModel):
     )
     created_at: dt.datetime = Field(
         description="Timestamp when the permission was created.",
-        examples=["YYYY-MM-DDTHH:mm:ssZ"],
+        examples=["2024-01-15T10:30:00Z"],
     )
     updated_at: dt.datetime | None = Field(
         default=None,
         description="Timestamp when the permission was last updated.",
-        examples=["YYYY-MM-DDTHH:mm:ssZ"],
+        examples=["2024-01-15T10:30:00Z"],
     )
 
     @field_serializer("created_at", "updated_at")

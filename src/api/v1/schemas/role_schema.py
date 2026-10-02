@@ -43,7 +43,7 @@ class RoleUpdateSchema(BaseModel):
 class RoleOutSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: PositiveInt = Field(ge=1, description="ID of the role.", examples=[1])
+    id: PositiveInt = Field(description="ID of the role.", examples=[1])
     code: str = Field(description="Code of the role.", examples=["tool_resource_role"])
     title: str = Field(description="Title of the role.", examples=["Manager of users"])
     description: str | None = Field(
@@ -56,12 +56,12 @@ class RoleOutSchema(BaseModel):
     )
     created_at: dt.datetime = Field(
         description="Timestamp when the role was created.",
-        examples=["YYYY-MM-DDTHH:mm:ssZ"],
+        examples=["2024-01-15T10:30:00Z"],
     )
     updated_at: dt.datetime | None = Field(
         default=None,
         description="Timestamp when the role was last updated.",
-        examples=["YYYY-MM-DDTHH:mm:ssZ"],
+        examples=["2024-01-15T10:30:00Z"],
     )
 
     @field_serializer("created_at", "updated_at")

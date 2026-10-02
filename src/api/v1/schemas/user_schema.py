@@ -41,7 +41,7 @@ class UserInSchema(BaseModel):
 class UserOutSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: PositiveInt = Field(ge=1, description="ID of the user.", examples=[1])
+    id: PositiveInt = Field(description="ID of the user.", examples=[1])
     full_name: str = Field(description="Full name of the user.", examples=["John Doe"])
     email: EmailStr = Field(
         description="E-mail address of the user.", examples=["email@email.com"]
@@ -53,12 +53,12 @@ class UserOutSchema(BaseModel):
     )
     created_at: dt.datetime = Field(
         description="Timestamp when the user was created.",
-        examples=["YYYY-MM-DDTHH:mm:ssZ"],
+        examples=["2024-01-15T10:30:00Z"],
     )
     updated_at: dt.datetime | None = Field(
         default=None,
         description="Timestamp when the user was last updated.",
-        examples=["YYYY-MM-DDTHH:mm:ssZ"],
+        examples=["2024-01-15T10:30:00Z"],
     )
 
     @field_serializer("created_at", "updated_at")

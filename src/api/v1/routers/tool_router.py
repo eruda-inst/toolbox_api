@@ -90,7 +90,9 @@ async def update(
 )
 async def delete(
     db: utilities.DatabaseDependency,
-    _: Annotated[None, Depends(dependencies.has_permission("toolbox:perfis:excluir"))],
+    _: Annotated[
+        None, Depends(dependencies.has_permission("toolbox:ferramentas:excluir"))
+    ],
     id: Annotated[int, Path(ge=1, description="ID of the tool.", examples=[1])],
 ) -> None:
     """

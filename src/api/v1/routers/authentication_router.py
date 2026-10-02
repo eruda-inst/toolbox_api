@@ -56,14 +56,15 @@ async def login(
 )
 async def logout(db: DatabaseDependency, current_user: CurrentUserDependency) -> None:
     """
-    Bumpt the token version of the user so all previously issued tokens become invalid.
+    Increment the token version of the user so all previously issued tokens become invalid.
     """
-    current_user.versao_token += 1  # type: ignore
+    current_user.token_version += 1  # type: ignore
     await db.commit()
 
 
 @authentication_router.post(
-    path="/refresh-token", summary="Exchange refresh token for new access token."
+    path="/refresh-token",
+    summary="Exchange refresh token for a new access/refresh token pair.",
 )
 async def refresh(
     db: DatabaseDependency,
@@ -71,7 +72,7 @@ async def refresh(
         str,
         Body(
             embed=True,
-            description="Valid refresh token previously issued byt he login endpoint.",
+            description="Valid refresh token previously issued by the login endpoint.",
             examples=["eyJ..."],
         ),
     ],

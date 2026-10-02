@@ -83,44 +83,44 @@ class AuthenticationService:
             if not email:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Token payload is missing the 'sub' claim",
+                    detail="Token payload is missing the 'sub' claim.",
                 )
             version_from_token = payload.get("ver")
             if version_from_token is None:
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED,
-                    detail="Token payload is missing the 'ver' claim",
+                    detail="Token payload is missing the 'ver' claim.",
                 )
 
             user = await cruds.UserCRUD.read_by(db=db, email=email)
             if not user:
                 raise HTTPException(
-                    status.HTTP_401_UNAUTHORIZED, detail="User not found"
+                    status.HTTP_401_UNAUTHORIZED, detail="User not found."
                 )
 
             if user.token_version != version_from_token:
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED,
-                    detail="Token has been revoked or is no longer valid",
+                    detail="Token has been revoked or is no longer valid.",
                 )
             if not bool(user.is_active):
                 raise HTTPException(
-                    status.HTTP_403_FORBIDDEN, detail="User account is inactive"
+                    status.HTTP_403_FORBIDDEN, detail="User account is inactive."
                 )
 
             return user
         except ExpiredSignatureError:
             raise HTTPException(
-                status.HTTP_401_UNAUTHORIZED, detail="Access token has expired"
+                status.HTTP_401_UNAUTHORIZED, detail="Access token has expired."
             )
         except JWTError:
             raise HTTPException(
-                status.HTTP_401_UNAUTHORIZED, detail="Invalid access token"
+                status.HTTP_401_UNAUTHORIZED, detail="Invalid access token."
             )
         except SQLAlchemyError:
             raise HTTPException(
                 status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Database error occurred while verifying token",
+                detail="Database error occurred while verifying token.",
             )
 
     @classmethod
@@ -152,17 +152,17 @@ class AuthenticationService:
             user = await cruds.UserCRUD.read_by(db=db, email=email)
             if not user:
                 raise HTTPException(
-                    status.HTTP_401_UNAUTHORIZED, detail="User not found"
+                    status.HTTP_401_UNAUTHORIZED, detail="User not found."
                 )
 
             if not ph.verify(password=password, hash=user.password):  # type: ignore
                 raise HTTPException(
-                    status.HTTP_401_UNAUTHORIZED, detail="Incorrect password"
+                    status.HTTP_401_UNAUTHORIZED, detail="Incorrect password."
                 )
 
             if not bool(user.is_active):
                 raise HTTPException(
-                    status.HTTP_403_FORBIDDEN, detail="User account is inactive"
+                    status.HTTP_403_FORBIDDEN, detail="User account is inactive."
                 )
 
             data = {"sub": email}
@@ -192,7 +192,7 @@ class AuthenticationService:
         except SQLAlchemyError:
             raise HTTPException(
                 status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Database error occurred during login",
+                detail="Database error occurred during login.",
             )
         except HTTPException:
             raise
@@ -228,38 +228,38 @@ class AuthenticationService:
             if not email:
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED,
-                    detail="Refresh token payload is missing the 'sub' claim",
+                    detail="Refresh token payload is missing the 'sub' claim.",
                 )
             version_from_token = payload.get("ver")
             if version_from_token is None:
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED,
-                    detail="Refresh token payload is missing the 'ver' claim",
+                    detail="Refresh token payload is missing the 'ver' claim.",
                 )
 
             user = await cruds.UserCRUD.read_by(db=db, email=email)
             if not user:
                 raise HTTPException(
-                    status.HTTP_401_UNAUTHORIZED, detail="User not found"
+                    status.HTTP_401_UNAUTHORIZED, detail="User not found."
                 )
 
             if user.token_version != version_from_token:
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED,
-                    detail="Refresh token has been revoked or is no longer valid",
+                    detail="Refresh token has been revoked or is no longer valid.",
                 )
             if not bool(user.is_active):
                 raise HTTPException(
-                    status.HTTP_403_FORBIDDEN, detail="User account is inactive"
+                    status.HTTP_403_FORBIDDEN, detail="User account is inactive."
                 )
 
         except ExpiredSignatureError:
             raise HTTPException(
-                status.HTTP_401_UNAUTHORIZED, detail="Refresh token has expired"
+                status.HTTP_401_UNAUTHORIZED, detail="Refresh token has expired."
             )
         except JWTError:
             raise HTTPException(
-                status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+                status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token."
             )
 
         data = {"sub": email}

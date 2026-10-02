@@ -12,6 +12,19 @@ from .. import models, schemas
 class ToolCRUD:
     @staticmethod
     async def create(db: AsyncSession, data: schemas.ToolInSchema) -> models.ToolModel:
+        """
+        Create a new tool.
+
+        Args:
+            db (AsyncSession): The async database session.
+            data (schemas.ToolInSchema): The data for the new tool.
+
+        Returns:
+            models.ToolModel: The newly created tool.
+
+        Raises:
+            HTTPException: 409 if a tool with the same unique field already exists.
+        """
         tool_data = data.model_dump()
         new_tool = models.ToolModel(**tool_data)
 
@@ -38,19 +51,33 @@ class ToolCRUD:
         category_name: str | None,
         is_active: bool | None,
     ) -> tuple[NonNegativeInt, Sequence[models.ToolModel]]:
+        """
+        Retrieve a paginated list of tools, optionally filtered by the given criteria.
+
+        Args:
+            db (AsyncSession): The async database session.
+            page (PositiveInt): The page number to retrieve (1-based).
+            limit (PositiveInt): The maximum number of tools per page.
+            name (str | None): Filter tools whose name contains this substring (case-insensitive).
+            category_name (str | None): Filter tools by the name of their category (case-insensitive).
+            is_active (bool | None): Filter tools by their active status.
+
+        Returns:
+            tuple[NonNegativeInt, Sequence[models.ToolModel]]: The total number of tools matching the filters, and the page of tools ordered by descending ID.
+        """
         stmt = select(models.ToolModel)
         count_stmt = select(func.count(models.ToolModel.id))
 
         if name is not None:
             stmt = stmt.where(models.ToolModel.name.ilike(f"%{name}%"))
             count_stmt = count_stmt.where(models.ToolModel.name.ilike(f"%{name}%"))
-            if category_name is not None:
-                stmt = stmt.join(models.ToolModel.category).where(
-                    models.CategoryModel.name.ilike(f"%{category_name}%")
-                )
-                count_stmt = count_stmt.join(models.ToolModel.category).where(
-                    models.CategoryModel.name.ilike(f"%{category_name}%")
-                )
+        if category_name is not None:
+            stmt = stmt.join(models.ToolModel.category).where(
+                models.CategoryModel.name.ilike(f"%{category_name}%")
+            )
+            count_stmt = count_stmt.join(models.ToolModel.category).where(
+                models.CategoryModel.name.ilike(f"%{category_name}%")
+            )
         if is_active is not None:
             stmt = stmt.where(models.ToolModel.is_active == is_active)
             count_stmt = count_stmt.where(models.ToolModel.is_active == is_active)
@@ -60,7 +87,7 @@ class ToolCRUD:
 
         stmt = stmt.order_by(models.ToolModel.id.desc())
 
-        offset = (page - 1) * item_count
+        offset = (page - 1) * limit
         stmt = stmt.offset(offset).limit(limit)
 
         tools = (await db.execute(stmt)).scalars().all()
@@ -85,7 +112,7 @@ class ToolCRUD:
 
         Raises:
             HTTPException: 404 if no tool with the given ID exists;
-                409 if the update violates a uniqueness constraint (e.g., duplicate code).
+                409 if the update violates a uniqueness constraint.
         """
         stmt = select(models.ToolModel).where(models.ToolModel.id == id)
         tool = (await db.execute(stmt)).scalar_one_or_none()

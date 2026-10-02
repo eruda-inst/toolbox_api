@@ -68,7 +68,9 @@ async def read_all_by(
 @category_router.patch(path="/id/{id}", summary="Update an existing category.")
 async def update(
     db: utilities.DatabaseDependency,
-    _: Annotated[None, Depends(dependencies.has_permission("toolbox:usuarios:editar"))],
+    _: Annotated[
+        None, Depends(dependencies.has_permission("toolbox:categorias:editar"))
+    ],
     id: Annotated[int, Path(ge=1, description="ID of the category.", examples=[1])],
     data: Annotated[
         schemas.CategoryUpdateSchema, Body(description="Data of the category.")
@@ -91,7 +93,7 @@ async def update(
 async def delete(
     db: utilities.DatabaseDependency,
     _: Annotated[
-        None, Depends(dependencies.has_permission("toolbox:usuarios:excluir"))
+        None, Depends(dependencies.has_permission("toolbox:categorias:excluir"))
     ],
     id: Annotated[int, Path(ge=1, description="ID of the category.", examples=[1])],
 ) -> None:

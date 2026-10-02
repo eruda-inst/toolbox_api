@@ -60,7 +60,7 @@ class PermissionCRUD:
             db (AsyncSession): The async database session.
             page (PositiveInt): The page number to retrieve (1-based).
             limit (PositiveInt): The maximum number of permissions per page.
-            name (str | None): Filter permissions whose name contains this substring (case-insensitive).
+            code (str | None): Filter permissions whose code contains this substring (case-insensitive).
             is_active (bool | None): Filter permissions by their active status.
 
         Returns:
@@ -83,7 +83,7 @@ class PermissionCRUD:
 
         stmt = stmt.order_by(models.PermissionModel.id.desc())
 
-        offset = (page - 1) * item_count
+        offset = (page - 1) * limit
         stmt = stmt.offset(offset).limit(limit)
 
         permissions = (await db.execute(stmt)).scalars().all()
@@ -108,7 +108,7 @@ class PermissionCRUD:
 
         Raises:
             HTTPException: 404 if no permission with the given ID exists;
-                409 if the update violates a uniqueness constraint (e.g., duplicate name).
+                409 if the update violates a uniqueness constraint (e.g., duplicate code).
         """
         stmt = select(models.PermissionModel).where(models.PermissionModel.id == id)
         permission = (await db.execute(stmt)).scalar_one_or_none()

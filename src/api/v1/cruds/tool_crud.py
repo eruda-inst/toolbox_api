@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from fastapi import HTTPException, status
 from pydantic import NonNegativeInt, PositiveInt
 from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import models, schemas
@@ -114,3 +114,35 @@ class ToolCRUD:
         await db.refresh(tool)
 
         return tool
+
+    @staticmethod
+    async def delete(db: AsyncSession, id: PositiveInt) -> None:
+        """
+        Delete a tool by ID.
+
+        Args:
+            db (AsyncSession): The async database session.
+            id (PositiveInt): The ID of the tool to delete.
+
+        Raises:
+            HTTPException: 404 if no tool with the given ID exists;
+                500 if the deletion fails at the database level.
+        """
+        stmt = select(models.ToolModel).where(models.ToolModel.id == id)
+        tool = (await db.execute(stmt)).scalar_one_or_none()
+
+        if tool is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Tool not found."
+            )
+
+        await db.delete(tool)
+
+        try:
+            await db.commit()
+        except SQLAlchemyError:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete tool.",
+            )

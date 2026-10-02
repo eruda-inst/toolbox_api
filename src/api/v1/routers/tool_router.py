@@ -83,3 +83,19 @@ async def update(
     """
     updated_tool = await cruds.ToolCRUD.update(db=db, id=id, data=data)
     return schemas.ToolOutSchema.model_validate(updated_tool)
+
+
+@tool_router.delete(
+    path="/id/{id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a tool."
+)
+async def delete(
+    db: utilities.DatabaseDependency,
+    _: Annotated[None, Depends(dependencies.has_permission("toolbox:perfis:excluir"))],
+    id: Annotated[int, Path(ge=1, description="ID of the tool.", examples=[1])],
+) -> None:
+    """
+    Delete a tool identified by its ID.
+
+    Removes the tool with the given ID from the database. Returns no content on success (HTTP 204).
+    """
+    await cruds.ToolCRUD.delete(db=db, id=id)

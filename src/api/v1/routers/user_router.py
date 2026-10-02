@@ -1,20 +1,19 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Body, Depends, Path, Query, status
 
-from .. import cruds, database, dependencies, schemas, utilities
+from .. import cruds, dependencies, schemas, utilities
 
 user_router = APIRouter(prefix="/users", tags=["Users"])
 
-DatabaseDependency = Annotated[AsyncSession, Depends(database.get_db)]
 
-
-@user_router.post(path="/", summary="Create a new user.")
+@user_router.post(
+    path="/", status_code=status.HTTP_201_CREATED, summary="Create a new user."
+)
 async def create(
-    db: DatabaseDependency,
+    db: utilities.DatabaseDependency,
     _: Annotated[None, Depends(dependencies.has_permission("toolbox:usuarios:criar"))],
-    data: schemas.UserInSchema,
+    data: Annotated[schemas.UserInSchema, Body(description="Data of the user.")],
 ) -> schemas.UserOutSchema:
     """
     Create a new user with the provided data and return the created record.
@@ -28,7 +27,7 @@ async def create(
 
 @user_router.get(path="/", summary="List users with filters and pagination.")
 async def get_all_by(
-    db: DatabaseDependency,
+    db: utilities.DatabaseDependency,
     _: Annotated[None, Depends(dependencies.has_permission("toolbox:usuarios:ver"))],
     page: utilities.PageQueryParameter = 1,
     limit: utilities.LimitQueryParameter = 10,
@@ -68,10 +67,10 @@ async def get_all_by(
 
 @user_router.patch(path="/id/{id}", summary="Update an existing user.")
 async def update(
-    db: DatabaseDependency,
+    db: utilities.DatabaseDependency,
     _: Annotated[None, Depends(dependencies.has_permission("toolbox:usuarios:editar"))],
     id: Annotated[int, Path(ge=1, description="ID of the user.", examples=[1])],
-    data: schemas.UserUpdateSchema,
+    data: Annotated[schemas.UserUpdateSchema, Body(description="Data of the user.")],
 ) -> schemas.UserOutSchema:
     """
     Partially update a user identified by its ID.
@@ -87,7 +86,7 @@ async def update(
     path="/id/{id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a user."
 )
 async def delete(
-    db: DatabaseDependency,
+    db: utilities.DatabaseDependency,
     _: Annotated[
         None, Depends(dependencies.has_permission("toolbox:usuarios:excluir"))
     ],

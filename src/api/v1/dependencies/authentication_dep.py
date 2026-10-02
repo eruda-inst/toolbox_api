@@ -4,31 +4,28 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from .. import database, models, services
+from .. import models, services, utilities
 
 bearer_security = HTTPBearer()
 
-DatabaseDependency = Annotated[AsyncSession, Depends(database.get_db)]
-
 
 async def get_current_user(
-    db: DatabaseDependency,
+    db: utilities.DatabaseDependency,
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer_security)],
 ) -> models.UserModel:
     """
-    Summary.
+    Resolve the authenticated user from the provided bearer access token.
 
     Args:
-        db (Annotated[AsyncSession, Depends(db.get_db)]): Description.
-        credentials (Annotated[HTTPAuthorizationCredentials, Depends(bearer_security)]): Description.
+        db (utilities.DatabaseDependency): Database session dependency used to verify the access token.
+        credentials (Annotated[HTTPAuthorizationCredentials, Depends(bearer_security)]): HTTP Bearer credentials containing the access token.
 
     Returns:
-        models.UserModel: Description.
+        models.UserModel: The user associated with a valid access token.
 
     Raises:
-        HTTPException: Description.
+        HTTPException: If the access token is invalid or the user is not found (401 Unauthorized).
     """
     user = await services.AuthenticationService.verify_access_token(
         db=db, access_token=credentials.credentials
@@ -55,14 +52,14 @@ def has_permission(
     """
 
     async def check_permission(
-        db: DatabaseDependency,
+        db: utilities.DatabaseDependency,
         current_user: Annotated[models.UserModel, Depends(get_current_user)],
     ) -> None:
         """
         Ensure the current user has the required permission.
 
         Args:
-            db (DatabaseDependency): Async database session used to query permissions.
+            db (utilities.DatabaseDependency): Async database session used to query permissions.
             current_user (Annotated[models.UserModel, Depends(get_current_user)]): Authenticated user resolved by get_current_user.
 
         Raises:

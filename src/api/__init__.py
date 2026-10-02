@@ -1,2 +1,3 @@
-def main() -> None:
-    print("Hello from api!")
+from .v1.api import api_v1_router
+
+__all__ = ["api_v1_router"]

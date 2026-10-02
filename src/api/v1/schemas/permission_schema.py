@@ -13,7 +13,7 @@ class PermissionInSchema(BaseModel):
     description: str | None = Field(
         default=None,
         description="Description of the permission.",
-        examples=["This permission does stuff."],
+        examples=["This permission does stuff"],
     )
     is_active: bool | None = Field(
         default=True,
@@ -31,7 +31,7 @@ class PermissionUpdateSchema(BaseModel):
     description: str | None = Field(
         default=None,
         description="Description of the permission.",
-        examples=["This permission does stuff."],
+        examples=["This permission does stuff"],
     )
     is_active: bool | None = Field(
         default=None,
@@ -50,7 +50,7 @@ class PermissionOutSchema(BaseModel):
     description: str | None = Field(
         default=None,
         description="Description of the permission.",
-        examples=["tool:resource:action"],
+        examples=["This permission does stuff"],
     )
     is_active: bool | None = Field(
         default=True,

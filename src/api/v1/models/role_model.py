@@ -9,7 +9,7 @@ class RoleModel(database.Base):
     __tablename__ = "roles"
 
     id = Column(type_=Integer, primary_key=True)
-    code = Column(type_=String, unique=True)
+    code = Column(type_=String, nullable=False, unique=True)
     title = Column(type_=String, nullable=False)
     description = Column(type_=String)
     is_active = Column(

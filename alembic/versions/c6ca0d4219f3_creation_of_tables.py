@@ -76,7 +76,7 @@ def upgrade() -> None:
     op.create_table(
         "roles",
         sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("code", sa.String, unique=True),
+        sa.Column("code", sa.String, nullable=False, unique=True),
         sa.Column("title", sa.String, nullable=False),
         sa.Column("description", sa.String),
         sa.Column(

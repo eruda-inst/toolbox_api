@@ -8,6 +8,7 @@ from .permission_schema import (
 )
 from .role_schema import RoleInSchema, RoleOutSchema, RoleUpdateSchema
 from .root_schema import RootOutSchema
+from .tool_schema import ToolInSchema, ToolOutSchema
 from .user_schema import UserInSchema, UserOutSchema, UserUpdateSchema
 
 __all__ = [
@@ -24,6 +25,8 @@ __all__ = [
     "RoleUpdateSchema",
     "RootOutSchema",
     "TokenOutSchema",
+    "ToolInSchema",
+    "ToolOutSchema",
     "UserInSchema",
     "UserOutSchema",
     "UserUpdateSchema",

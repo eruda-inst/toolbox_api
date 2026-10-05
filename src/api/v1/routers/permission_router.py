@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Path, Query, status
 from fastapi.params import Body, Depends
 
-from .. import cruds, dependencies, schemas, utilities
+from .. import cruds, dependencies, models, schemas, utilities
 
 permission_router = APIRouter(prefix="/permissions", tags=["Permissions"])
 
@@ -34,7 +34,7 @@ async def create(
 )
 async def read_all_by(
     db: utilities.DatabaseDependency,
-    _: Annotated[None, Depends(dependencies.has_permission("toolbox:permissoes:ver"))],
+    _: Annotated[models.UserModel, Depends(dependencies.get_current_user)],
     page: utilities.PageQueryParameter = 1,
     limit: utilities.LimitQueryParameter = 10,
     code: Annotated[
@@ -44,14 +44,17 @@ async def read_all_by(
     is_active: Annotated[
         bool | None, Query(description="Filter by status.", examples=[True])
     ] = None,
+    user_id: Annotated[
+        int | None, Query(gt=0, description="Filter by ID of the user", examples=[1])
+    ] = None,
 ) -> schemas.ListOutSchema[schemas.PermissionOutSchema]:
     """
     Retrieve a paginated list of permissions, optionally filtered.
 
-    Supports partial matching on `code`, and exact matching on `is_active`. Results are paginated using `page` and `limit`, and the response includes metadata with the total item count.
+    Supports partial matching on `code`, and exact matching on `is_active` and `user_id`. Results are paginated using `page` and `limit`, and the response includes metadata with the total item count.
     """
     item_count, permissions = await cruds.PermissionCRUD.read_all_by(
-        db=db, page=page, limit=limit, code=code, is_active=is_active
+        db=db, page=page, limit=limit, code=code, is_active=is_active, user_id=user_id
     )
     return schemas.ListOutSchema[schemas.PermissionOutSchema](
         data=[

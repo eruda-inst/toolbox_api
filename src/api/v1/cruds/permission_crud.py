@@ -52,6 +52,7 @@ class PermissionCRUD:
         limit: PositiveInt,
         code: str | None,
         is_active: bool | None,
+        user_id: PositiveInt | None,
     ) -> tuple[NonNegativeInt, Sequence[models.PermissionModel]]:
         """
         Retrieve a paginated list of permissions, optionally filtered by the given criteria.
@@ -62,6 +63,7 @@ class PermissionCRUD:
             limit (PositiveInt): The maximum number of permissions per page.
             code (str | None): Filter permissions whose code contains this substring (case-insensitive).
             is_active (bool | None): Filter permissions by their active status.
+            user_id (PositiveInt | None): Filter permissions by ID of the user.
 
         Returns:
             tuple[NonNegativeInt, Sequence[models.PermissionModel]]: The total number of permissions matching the filters, and the page of permissions ordered by descending ID.
@@ -77,6 +79,12 @@ class PermissionCRUD:
         if is_active is not None:
             stmt = stmt.where(models.PermissionModel.is_active == is_active)
             count_stmt = count_stmt.where(models.PermissionModel.is_active == is_active)
+        if user_id is not None:
+            user_filter = models.PermissionModel.roles.any(
+                models.RoleModel.users.any(models.UserModel.id == user_id)
+            )
+            stmt = stmt.where(user_filter)
+            count_stmt = count_stmt.where(user_filter)
 
         item_count = (await db.execute(count_stmt)).scalar()
         item_count = item_count if item_count is not None else 0

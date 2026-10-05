@@ -36,6 +36,7 @@ async def login(
     password: Annotated[
         str,
         Body(
+            min_length=8,
             description="Plain-text password associated with the e-mail address.",
             examples=["12345678"],
         ),

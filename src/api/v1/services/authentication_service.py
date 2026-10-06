@@ -3,6 +3,7 @@ from typing import Any, Final
 from zoneinfo import ZoneInfo
 
 from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 from fastapi import HTTPException, status
 from jose import ExpiredSignatureError, JWTError, jwt
 from pydantic import EmailStr, NonNegativeInt, PositiveInt
@@ -51,6 +52,14 @@ class AuthenticationService:
         expire = dt.datetime.now(ZoneInfo(config.settings.timezone)) + expires_delta
         to_encode.update({"exp": expire})
         return jwt.encode(claims=to_encode, key=JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+    @staticmethod
+    def _verify_password(password: str, hash: str) -> bool:
+        try:
+            ph.verify(password=password, hash=hash)
+            return True
+        except VerifyMismatchError:
+            return False
 
     @staticmethod
     async def verify_access_token(
@@ -155,7 +164,7 @@ class AuthenticationService:
                     status.HTTP_401_UNAUTHORIZED, detail="Incorrect credentials."
                 )
 
-            if not ph.verify(password=password, hash=user.password):  # type: ignore
+            if not cls._verify_password(password=password, hash=user.password):  # type: ignore
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED, detail="Incorrect credentials."
                 )

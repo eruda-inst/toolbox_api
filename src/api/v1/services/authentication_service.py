@@ -95,7 +95,7 @@ class AuthenticationService:
             user = await cruds.UserCRUD.read_by(db=db, email=email)
             if not user:
                 raise HTTPException(
-                    status.HTTP_401_UNAUTHORIZED, detail="User not found."
+                    status.HTTP_401_UNAUTHORIZED, detail="Incorrect credentials."
                 )
 
             if user.token_version != version_from_token:
@@ -152,12 +152,12 @@ class AuthenticationService:
             user = await cruds.UserCRUD.read_by(db=db, email=email)
             if not user:
                 raise HTTPException(
-                    status.HTTP_401_UNAUTHORIZED, detail="User not found."
+                    status.HTTP_401_UNAUTHORIZED, detail="Incorrect credentials."
                 )
 
             if not ph.verify(password=password, hash=user.password):  # type: ignore
                 raise HTTPException(
-                    status.HTTP_401_UNAUTHORIZED, detail="Incorrect password."
+                    status.HTTP_401_UNAUTHORIZED, detail="Incorrect credentials."
                 )
 
             if not bool(user.is_active):
@@ -240,7 +240,7 @@ class AuthenticationService:
             user = await cruds.UserCRUD.read_by(db=db, email=email)
             if not user:
                 raise HTTPException(
-                    status.HTTP_401_UNAUTHORIZED, detail="User not found."
+                    status.HTTP_401_UNAUTHORIZED, detail="Incorrect credentials."
                 )
 
             if user.token_version != version_from_token:

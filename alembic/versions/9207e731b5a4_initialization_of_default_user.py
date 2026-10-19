@@ -14,7 +14,7 @@ from argon2 import PasswordHasher
 from pydantic import EmailStr
 
 from alembic import op
-from src.api.v1.config import settings
+from src.toolbox_api.v1.config import settings
 
 # revision identifiers, used by Alembic.
 revision: str = "9207e731b5a4"

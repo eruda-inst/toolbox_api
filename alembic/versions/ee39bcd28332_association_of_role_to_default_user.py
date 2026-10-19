@@ -12,7 +12,7 @@ from typing import Final
 import sqlalchemy as sa
 
 from alembic import op
-from src.api.v1.config import settings
+from src.toolbox_api.v1.config import settings
 
 # revision identifiers, used by Alembic.
 revision: str = "ee39bcd28332"

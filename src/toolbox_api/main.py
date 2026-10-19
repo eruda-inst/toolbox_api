@@ -4,8 +4,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import HttpUrl
 
-from .api import api_v1_router
-from .api.v1 import schemas
+from .v1 import schemas
+from .v1.api import api_v1_router
 
 
 @asynccontextmanager
